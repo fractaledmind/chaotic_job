@@ -73,7 +73,7 @@ module ChaoticJob
       in Time
         cutoff
       end
-      delta = (Time.now - time).abs
+      delta = (Time.now - time).abs.floor
       changeset = case delta
       when 0..59                    # seconds
         {usec: 0}
