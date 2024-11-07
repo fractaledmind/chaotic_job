@@ -21,7 +21,12 @@ module ChaoticJob
 
       ActiveSupport::Notifications.subscribed(->(event) { @events << event.dup }, @capture) do
         glitch.inject! do
-          block_given? ? yield : Performance.rehearse(@job)
+          if block_given?
+            yield
+          else
+            @job.enqueue
+            Performer.perform_all
+          end
         end
       end
 
