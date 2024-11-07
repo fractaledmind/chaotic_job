@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+## [0.1.1] - 2024-11-06
+
+- Update `Journal` interface
+- Add top-level `ChaoticJob` methods to work with the journal
+- Fix bug with job sorting in the `Performer`
+- Fix bug with resolving time cutoffs in the `Performer`
+- Fix bug with using the `run_scenario` helper with a block
+
 ## [0.1.0] - 2024-11-06
 
 - Added `Journal` to log activity for tests
