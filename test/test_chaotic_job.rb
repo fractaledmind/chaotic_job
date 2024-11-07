@@ -13,25 +13,25 @@ class TestChaoticJob < ActiveJob::TestCase
       end
 
       def step_1
-        ChaoticJob::Journal.log
+        ChaoticJob.log_to_journal!
       end
 
       def step_2
-        ChaoticJob::Journal.log
+        ChaoticJob.log_to_journal!
       end
     end
 
     Job1.perform_later
     perform_all
 
-    assert_equal 2, ChaoticJob::Journal.total
+    assert_equal 2, ChaoticJob.journal_size
   end
 
   test "performing a job that schedules another job" do
     class Job2 < ActiveJob::Base
       class ChildJob < ActiveJob::Base
         def perform
-          ChaoticJob::Journal.log(scope: :child)
+          ChaoticJob.log_to_journal!(scope: :child)
         end
       end
 
@@ -44,7 +44,7 @@ class TestChaoticJob < ActiveJob::TestCase
       end
 
       def step_1
-        ChaoticJob::Journal.log(scope: :parent)
+        ChaoticJob.log_to_journal!(scope: :parent)
       end
 
       def step_2
@@ -53,7 +53,7 @@ class TestChaoticJob < ActiveJob::TestCase
 
       def step_3
         raise StandardError if executions == 1
-        ChaoticJob::Journal.log(scope: :parent)
+        ChaoticJob.log_to_journal!(scope: :parent)
       end
     end
 
@@ -62,15 +62,15 @@ class TestChaoticJob < ActiveJob::TestCase
 
     assert_equal 2, enqueued_jobs.size
     assert_equal 2, performed_jobs.size
-    assert_equal 3, ChaoticJob::Journal.total(scope: :parent)
-    assert_equal 0, ChaoticJob::Journal.total(scope: :child)
+    assert_equal 3, ChaoticJob.journal_size(scope: :parent)
+    assert_equal 0, ChaoticJob.journal_size(scope: :child)
 
     perform_all_after(7.days)
 
     assert_equal 0, enqueued_jobs.size
     assert_equal 4, performed_jobs.size
-    assert_equal 3, ChaoticJob::Journal.total(scope: :parent)
-    assert_equal 2, ChaoticJob::Journal.total(scope: :child)
+    assert_equal 3, ChaoticJob.journal_size(scope: :parent)
+    assert_equal 2, ChaoticJob.journal_size(scope: :child)
   end
 
   test "simulation of a simple job" do
@@ -82,21 +82,21 @@ class TestChaoticJob < ActiveJob::TestCase
       end
 
       def step_1
-        ChaoticJob::Journal.log
+        ChaoticJob.log_to_journal!
       end
 
       def step_2
-        ChaoticJob::Journal.log
+        ChaoticJob.log_to_journal!
       end
 
       def step_3
-        ChaoticJob::Journal.log
+        ChaoticJob.log_to_journal!
       end
     end
 
     assert true
     run_simulation(Job3.new) do |scenario|
-      assert_operator ChaoticJob::Journal.total, :>=, 3
+      assert_operator ChaoticJob.journal_size, :>=, 3
     end
   end
 
@@ -109,20 +109,20 @@ class TestChaoticJob < ActiveJob::TestCase
       end
 
       def step_1
-        ChaoticJob::Journal.log
+        ChaoticJob.log_to_journal!
       end
 
       def step_2
-        ChaoticJob::Journal.log
+        ChaoticJob.log_to_journal!
       end
 
       def step_3
-        ChaoticJob::Journal.log
+        ChaoticJob.log_to_journal!
       end
     end
 
     run_scenario(Job4.new, glitch: ["before", "#{__FILE__}:108"])
 
-    assert_equal 5, ChaoticJob::Journal.total
+    assert_equal 5, ChaoticJob.journal_size
   end
 end

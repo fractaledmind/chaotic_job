@@ -45,7 +45,11 @@ module ChaoticJob
           rat = rjob[:at]
 
           # sort by scheduled time, with nil values first
-          lat && rat ? lat <=> rat : lat ? 1 : -1
+          if lat && rat
+            lat <=> rat
+          else
+            lat ? 1 : -1
+          end
         end
         .select do |job|
           scheduled_at = job[:at]

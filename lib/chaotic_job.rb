@@ -68,10 +68,10 @@ module ChaoticJob
       kwargs = {glitches: glitches || [glitch]}
       kwargs[:raise] = raise if raise
       kwargs[:capture] = capture if capture
-      if block_given?
+      if block
         Scenario.new(job, **kwargs).run(&block)
       else
-        Scenario.new(job, **kwargs).run()
+        Scenario.new(job, **kwargs).run
       end
     end
   end
