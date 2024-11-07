@@ -59,29 +59,29 @@ end
 
 But, this method does not behave as you would expect. Functionally, it overwrites the `enqueue` method to immediately perform the job, which means that instead of your job being performed in waves, the retry is performed _within_ the execution of the original job. This both confuses the logs and means the behavior in your tests are not representative of the behavior in production.
 
-In order to properly test job retries, you should use the `perform_all` method provided by `ChaoticJob::Helpers`:
+In order to properly test job retries, you should use the `perform_all_jobs` method provided by `ChaoticJob::Helpers`:
 
 ```ruby
 Job.perform_later
-perform_all
+perform_all_jobs
 ```
 
 This helper will perform the job and all of its retries in the proper way, in waves, just like it would in production.
 
-If you need more control over which batches of jobs are performed, you can use the `perform_all_before` and `perform_all_after` methods. These are particularly useful if you need to test the behavior of a job that schedules another job. You can use these methods to perform only the original job and its retries, assert the state of the system, and then perform the scheduled job and its retries.
+If you need more control over which batches of jobs are performed, you can use the `perform_all_jobs_before` and `perform_all_jobs_after` methods. These are particularly useful if you need to test the behavior of a job that schedules another job. You can use these methods to perform only the original job and its retries, assert the state of the system, and then perform the scheduled job and its retries.
 
 ```ruby
 JobThatSchedules.perform_later
-perform_all_before(4.seconds)
+perform_all_jobs_before(4.seconds)
 assert_equal 1, enqueued_jobs.size
 assert_equal 2, performed_jobs.size
 
-perform_all_after(1.day)
+perform_all_jobs_after(1.day)
 assert_equal 0, enqueued_jobs.size
 assert_equal 3, performed_jobs.size
 ```
 
-You can pass either a `Time` object or an `ActiveSupport::Duration` object to these methods. And, to make the code as readable as possible, the `perform_all_before` is also aliased as the `perform_all_within` method. This allows you to write the example above as `perform_all_within(4.seconds)`.
+You can pass either a `Time` object or an `ActiveSupport::Duration` object to these methods. And, to make the code as readable as possible, the `perform_all_jobs_before` is also aliased as the `perform_all_jobs_within` method. This allows you to write the example above as `perform_all_jobs_within(4.seconds)`.
 
 ### Simulating Failures
 
