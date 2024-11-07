@@ -6,13 +6,13 @@
 # Simulation.new(job).scenarios
 module ChaoticJob
   class Simulation
-    def initialize(job, test: nil, variations: 100, seed: nil, depth: 1)
+    def initialize(job, depth: 1, variations: 100, test: nil, seed: nil)
       @template = job
-      @test = test
+      @depth = depth
       @variations = variations
+      @test = test
       @seed = seed || Random.new_seed
       @random = Random.new(@seed)
-      @depth = depth
     end
 
     def run(&callback)

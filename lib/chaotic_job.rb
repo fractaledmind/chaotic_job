@@ -28,13 +28,19 @@ module ChaoticJob
       Performer.perform_all_after(time)
     end
 
-    def run_simulation(job, &block)
-      Simulation.new(job, test: self).run(&block)
+    def run_simulation(job, depth: nil, variations: nil, &block)
+      seed = defined?(RSpec) ? RSpec.configuration.seed : Minitest.seed
+      kwargs = {test: self, seed: seed}
+      kwargs[:depth] = depth if depth
+      kwargs[:variations] = variations if variations
+      Simulation.new(job, **kwargs).run(&block)
     end
 
-    def run_scenario(job, glitch: nil, glitches: nil)
-      arg = glitches || [glitch]
-      Scenario.new(job, glitches: arg).run
+    def run_scenario(job, glitch: nil, glitches: nil, raise: nil, capture: nil)
+      kwargs = {glitches: glitches || [glitch]}
+      kwargs[:raise] = raise if raise
+      kwargs[:capture] = capture if capture
+      Scenario.new(job, **kwargs).run
     end
   end
 end
