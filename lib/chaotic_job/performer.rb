@@ -40,7 +40,13 @@ module ChaoticJob
 
     def enqueued_jobs_where(before: nil, after: nil)
       enqueued_jobs
-        .sort_by { |job| job["scheduled_at"] }
+        .sort do |ljob, rjob|
+          lat = ljob[:at]
+          rat = rjob[:at]
+
+          # sort by scheduled time, with nil values first
+          lat && rat ? lat <=> rat : lat ? 1 : -1
+        end
         .select do |job|
           scheduled_at = job[:at]
 
