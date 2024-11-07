@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [0.2.0] - 2024-11-06
+
+- Update the `perform_all` helper method to `perform_all_jobs`
+- Update the `perform_all_before` helper method to `perform_all_jobs_before`
+- Update the `perform_all_after` helper method to `perform_all_jobs_after`
+- Update the `perform_all_within` helper method to `perform_all_jobs_within`
+
 ## [0.1.1] - 2024-11-06
 
 - Update `Journal` interface
