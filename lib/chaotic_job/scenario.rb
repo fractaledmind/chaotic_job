@@ -16,15 +16,15 @@ module ChaoticJob
       @events = []
     end
 
-    def run
+    def run(&block)
       @job.class.retry_on RetryableError, attempts: 10, wait: 1, jitter: 0
 
       ActiveSupport::Notifications.subscribed(->(event) { @events << event.dup }, @capture) do
         glitch.inject! do
+          @job.enqueue
           if block_given?
-            yield
+            block.call
           else
-            @job.enqueue
             Performer.perform_all
           end
         end
