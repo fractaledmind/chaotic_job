@@ -61,4 +61,22 @@ class TestChaoticJob < ActiveJob::TestCase
     assert_equal 3, ChaoticJob::Journal.total(scope: :parent)
     assert_equal 2, ChaoticJob::Journal.total(scope: :child)
   end
+
+  test "simulation of a simple job" do
+    class Job3 < ActiveJob::Base
+      def perform
+        step_1
+        step_2
+        step_3
+      end
+
+      def step_1; ChaoticJob::Journal.log; end
+      def step_2; ChaoticJob::Journal.log; end
+      def step_3; ChaoticJob::Journal.log; end
+    end
+
+    run_simulation(Job3.new) do |scenario|
+      assert_operator ChaoticJob::Journal.total, :>=, 3
+    end
+  end
 end
