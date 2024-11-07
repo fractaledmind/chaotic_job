@@ -6,7 +6,7 @@
 # Simulation.new(job).scenarios
 module ChaoticJob
   class Simulation
-    def initialize(job, test: nil, variations: 100, seed: nil, depth: 3)
+    def initialize(job, test: nil, variations: 100, seed: nil, depth: 1)
       @template = job
       @test = test
       @variations = variations
@@ -83,7 +83,7 @@ module ChaoticJob
     def run_scenario(scenario, &callback)
       debug "Running simulation with scenario: #{scenario}"
       @test.before_setup
-      scenario.enact!
+      scenario.run
       @test.after_teardown
       callback.call(scenario)
     end
