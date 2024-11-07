@@ -62,22 +62,22 @@ module ChaoticJob
 
     def resolve_cutoff(cutoff)
       time = case cutoff
-             in ActiveSupport::Duration
-               cutoff.from_now
-             in Time
-               cutoff
-             end
+      in ActiveSupport::Duration
+        cutoff.from_now
+      in Time
+        cutoff
+      end
       delta = (Time.now - time).abs
       changeset = case delta
-                  when 0..59                    # seconds
-                    { usec: 0 }
-                  when 60..3599                 # minutes
-                    { sec: 0, usec: 0 }
-                  when 3600..86_399             # hours
-                    { min: 0, sec: 0, usec: 0 }
-                  when 86_400..Float::INFINITY  # days+
-                    { hour: 0, min: 0, sec: 0, usec: 0 }
-                  end
+      when 0..59                    # seconds
+        {usec: 0}
+      when 60..3599                 # minutes
+        {sec: 0, usec: 0}
+      when 3600..86_399             # hours
+        {min: 0, sec: 0, usec: 0}
+      when 86_400..Float::INFINITY  # days+
+        {hour: 0, min: 0, sec: 0, usec: 0}
+      end
       time.change(**changeset)
     end
   end

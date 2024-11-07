@@ -12,8 +12,13 @@ class TestChaoticJob < ActiveJob::TestCase
         step_2
       end
 
-      def step_1; ChaoticJob::Journal.log; end
-      def step_2; ChaoticJob::Journal.log; end
+      def step_1
+        ChaoticJob::Journal.log
+      end
+
+      def step_2
+        ChaoticJob::Journal.log
+      end
     end
 
     Job1.perform_later
@@ -38,8 +43,14 @@ class TestChaoticJob < ActiveJob::TestCase
         step_3
       end
 
-      def step_1; ChaoticJob::Journal.log(scope: :parent); end
-      def step_2; ChildJob.set(wait: 1.week).perform_later; end
+      def step_1
+        ChaoticJob::Journal.log(scope: :parent)
+      end
+
+      def step_2
+        ChildJob.set(wait: 1.week).perform_later
+      end
+
       def step_3
         raise StandardError if executions == 1
         ChaoticJob::Journal.log(scope: :parent)
@@ -70,9 +81,17 @@ class TestChaoticJob < ActiveJob::TestCase
         step_3
       end
 
-      def step_1; ChaoticJob::Journal.log; end
-      def step_2; ChaoticJob::Journal.log; end
-      def step_3; ChaoticJob::Journal.log; end
+      def step_1
+        ChaoticJob::Journal.log
+      end
+
+      def step_2
+        ChaoticJob::Journal.log
+      end
+
+      def step_3
+        ChaoticJob::Journal.log
+      end
     end
 
     run_simulation(Job3.new) do |scenario|
@@ -88,12 +107,20 @@ class TestChaoticJob < ActiveJob::TestCase
         step_3
       end
 
-      def step_1; ChaoticJob::Journal.log; end
-      def step_2; ChaoticJob::Journal.log; end
-      def step_3; ChaoticJob::Journal.log; end
+      def step_1
+        ChaoticJob::Journal.log
+      end
+
+      def step_2
+        ChaoticJob::Journal.log
+      end
+
+      def step_3
+        ChaoticJob::Journal.log
+      end
     end
 
-    run_scenario(Job4.new, glitch: ["before", "#{__FILE__}:88"])
+    run_scenario(Job4.new, glitch: ["before", "#{__FILE__}:107"])
 
     assert_equal 5, ChaoticJob::Journal.total
   end

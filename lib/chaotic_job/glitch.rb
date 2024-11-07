@@ -61,7 +61,7 @@ module ChaoticJob
       @breakpoints[path_with_line] ||= {}
       # contents = File.read(file_path).split("\n") unless @file_contents.key?(path_with_line)
       # @file_contents << contents
-      @breakpoints[path_with_line][position] = { block: block, executed: false }
+      @breakpoints[path_with_line][position] = {block: block, executed: false}
     end
 
     def execute_block(handler)

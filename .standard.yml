@@ -1,3 +1,7 @@
 # For available configuration options, see:
 #   https://github.com/standardrb/standard
 ruby_version: 3.0
+
+ignore:
+  - 'test/**/*':
+    - Lint/ConstantDefinitionInBlock

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'simplecov'
+require "simplecov"
 SimpleCov.start do
   enable_coverage :branch
   primary_coverage :branch
@@ -23,5 +23,6 @@ class ActiveSupport::TestCase # rubocop:disable Style/ClassAndModuleChildren
     enqueued_jobs.clear if defined?(enqueued_jobs)
   end
 
-  def after_teardown; end
+  def after_teardown
+  end
 end

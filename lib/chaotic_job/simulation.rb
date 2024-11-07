@@ -70,7 +70,7 @@ module ChaoticJob
       trace = TracePoint.new(:line) do |tp|
         next if tp.defined_class == self.class
         next unless tp.path == job_file_path ||
-                    tp.defined_class == job_class
+          tp.defined_class == job_class
 
         @callstack << [tp.path, tp.lineno]
       end
