@@ -3,7 +3,9 @@
 require "bundler/gem_tasks"
 require "minitest/test_task"
 
-Minitest::TestTask.create
+Minitest::TestTask.create :test do |t|
+  t.framework = nil
+end
 
 require "standard/rake"
 
