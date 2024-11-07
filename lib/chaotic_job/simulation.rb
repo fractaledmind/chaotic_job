@@ -18,10 +18,11 @@ module ChaoticJob
     def run(&callback)
       @template.class.retry_on RetryableError, attempts: @depth + 2, wait: 1, jitter: 0
 
-      debug "Running #{variants.size} simulations of the total #{permutations.size} possibilities..."
+      debug "👾 Running #{variants.size} simulations of the total #{permutations.size} possibilities..."
 
       scenarios.map do |scenario|
         run_scenario(scenario, &callback)
+        print "·"
       end
     end
 
@@ -81,7 +82,7 @@ module ChaoticJob
     end
 
     def run_scenario(scenario, &callback)
-      debug "Running simulation with scenario: #{scenario}"
+      debug "👾 Running simulation with scenario: #{scenario}"
       @test.before_setup
       scenario.run
       @test.after_teardown
