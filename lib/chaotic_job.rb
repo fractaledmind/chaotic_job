@@ -11,6 +11,34 @@ module ChaoticJob
   class RetryableError < StandardError
   end
 
+  def self.log_to_journal!(item = nil, scope: nil)
+    if item && scope
+      Journal.log(item, scope: scope)
+    elsif item
+      Journal.log(item)
+    elsif scope
+      Journal.log(scope: scope)
+    else
+      Journal.log
+    end
+  end
+
+  def self.journal_size(scope: nil)
+    if scope
+      Journal.size(scope: scope)
+    else
+      Journal.size
+    end
+  end
+
+  def self.top_journal_entry(scope: nil)
+    if scope
+      Journal.top(scope: scope)
+    else
+      Journal.top
+    end
+  end
+
   module Helpers
     def perform_all
       Performer.perform_all
@@ -36,11 +64,15 @@ module ChaoticJob
       Simulation.new(job, **kwargs).run(&block)
     end
 
-    def run_scenario(job, glitch: nil, glitches: nil, raise: nil, capture: nil)
+    def run_scenario(job, glitch: nil, glitches: nil, raise: nil, capture: nil, &block)
       kwargs = {glitches: glitches || [glitch]}
       kwargs[:raise] = raise if raise
       kwargs[:capture] = capture if capture
-      Scenario.new(job, **kwargs).run
+      if block_given?
+        Scenario.new(job, **kwargs).run(&block)
+      else
+        Scenario.new(job, **kwargs).run()
+      end
     end
   end
 end
