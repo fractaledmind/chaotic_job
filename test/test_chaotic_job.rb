@@ -22,7 +22,7 @@ class TestChaoticJob < ActiveJob::TestCase
     end
 
     Job1.perform_later
-    perform_all
+    perform_all_jobs
 
     assert_equal 2, ChaoticJob.journal_size
   end
@@ -58,14 +58,14 @@ class TestChaoticJob < ActiveJob::TestCase
     end
 
     Job2.perform_later
-    perform_all_within(4.seconds)
+    perform_all_jobs_within(4.seconds)
 
     assert_equal 2, enqueued_jobs.size
     assert_equal 2, performed_jobs.size
     assert_equal 3, ChaoticJob.journal_size(scope: :parent)
     assert_equal 0, ChaoticJob.journal_size(scope: :child)
 
-    perform_all_after(7.days)
+    perform_all_jobs_after(7.days)
 
     assert_equal 0, enqueued_jobs.size
     assert_equal 4, performed_jobs.size

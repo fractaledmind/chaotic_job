@@ -40,19 +40,16 @@ module ChaoticJob
   end
 
   module Helpers
-    def perform_all
+    def perform_all_jobs
       Performer.perform_all
     end
 
-    def perform_all_within(time)
-      Performer.perform_all_within(time)
-    end
-
-    def perform_all_before(time)
+    def perform_all_jobs_before(time)
       Performer.perform_all_before(time)
     end
+    alias_method :perform_all_jobs_within, :perform_all_jobs_before
 
-    def perform_all_after(time)
+    def perform_all_jobs_after(time)
       Performer.perform_all_after(time)
     end
 
