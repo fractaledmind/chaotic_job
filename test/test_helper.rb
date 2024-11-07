@@ -12,6 +12,8 @@ require "chaotic_job"
 require "minitest/autorun"
 require "active_job"
 
+ActiveJob::Base.logger = Logger.new(ENV["LOG"].present? ? $stdout : IO::NULL)
+
 class ActiveSupport::TestCase # rubocop:disable Style/ClassAndModuleChildren
   # Run tests in parallel with specified workers
   parallelize(workers: :number_of_processors)

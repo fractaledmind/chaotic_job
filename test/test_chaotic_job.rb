@@ -94,6 +94,7 @@ class TestChaoticJob < ActiveJob::TestCase
       end
     end
 
+    assert true
     run_simulation(Job3.new) do |scenario|
       assert_operator ChaoticJob::Journal.total, :>=, 3
     end
@@ -120,7 +121,7 @@ class TestChaoticJob < ActiveJob::TestCase
       end
     end
 
-    run_scenario(Job4.new, glitch: ["before", "#{__FILE__}:107"])
+    run_scenario(Job4.new, glitch: ["before", "#{__FILE__}:108"])
 
     assert_equal 5, ChaoticJob::Journal.total
   end
