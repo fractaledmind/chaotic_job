@@ -32,8 +32,9 @@ module ChaoticJob
       Simulation.new(job, test: self).run(&block)
     end
 
-    def run_scenario(job)
-      Scenario.new(job).run
+    def run_scenario(job, glitch: nil, glitches: nil)
+      arg = glitches || [glitch]
+      Scenario.new(job, glitches: arg).run
     end
   end
 end

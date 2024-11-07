@@ -79,4 +79,22 @@ class TestChaoticJob < ActiveJob::TestCase
       assert_operator ChaoticJob::Journal.total, :>=, 3
     end
   end
+
+  test "scenario of a simple job" do
+    class Job4 < ActiveJob::Base
+      def perform
+        step_1
+        step_2
+        step_3
+      end
+
+      def step_1; ChaoticJob::Journal.log; end
+      def step_2; ChaoticJob::Journal.log; end
+      def step_3; ChaoticJob::Journal.log; end
+    end
+
+    run_scenario(Job4.new, glitch: ["before", "#{__FILE__}:88"])
+
+    assert_equal 5, ChaoticJob::Journal.total
+  end
 end
