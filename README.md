@@ -44,7 +44,7 @@ The `ChaoticJob::Helpers` module provides 6 methods, 4 of which simply allow you
 
 ### Glitches
 
-A glitch is an error injected into the job execution flow via a TracePoint and is implemented as a custom error class from ChaoticJob. This represents a transient error for testing a job's resilience to unpredictable failures that can occur while running jobs - rather than permanent errors resulting from your job's business logic, as those rely on the preconditions of your job rather and are directly testable without ChaoticJob. The glitch failure will occur once and only once, with the expectation that this force a retry that executes the job without the glitch to ensure resiliency to unexpected errors at specific points in the execution of a job.
+A central concept in `ChaoticJob` is the _glitch_. A glitch is an error injected into the job execution flow via a [`TracePoint`](https://docs.ruby-lang.org/en/master/TracePoint.html). Glitches are transient errors, which means they occur once and only once, making them perfect for testing a job's resilience to unpredictable failures that can occur while running jobs, like network issues, upstream API outages, rate limits, or  infrastructure failure. By default, `ChaoticJob` raises a custom error defined by the gem (`ChaoticJob::RetryableError`), which the internals of the gem ensure that the job under test is configured to retry on; you can, however, raise specific errors as needed when setting up your [scenarios](#simulating-failures). By forcing a retry via the error handling mechanisms of Active Job, glitches are a simple but effective way to test that your job is resilient to any kind of transient error that the job is configured to retry on.
 
 ### Performing Jobs
 
