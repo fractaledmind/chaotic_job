@@ -23,6 +23,14 @@ module ChaoticJob
     end
   end
 
+  def self.journal_entries(scope: nil)
+    if scope
+      Journal.entries(scope: scope)
+    else
+      Journal.entries
+    end
+  end
+
   def self.journal_size(scope: nil)
     if scope
       Journal.size(scope: scope)
