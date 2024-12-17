@@ -124,7 +124,7 @@ end
 > | `Journal.entries` | get all of the logged values under the default scope |
 > | `Journal.entries(scope: :special)` | get all of the logged values under a particular scope |
 
-In this example, the job being tested is defined within the test case. You can, of course, also test jobs defined in your application. The key detail is the `glitch` keyword argument. A "glitch" is simply a tuple that describes precisely where you would like the failure to occur. The first element of the tuple is the location of the glitch, which can be either *before* or *after*. The second element is the location of the code that will be affected by the glitch, defined by its file path and line number. What this example scenario does is inject a glitch before the `step_3` method is called, here:
+In this example, the job being tested is defined within the test case. You can, of course, also test jobs defined in your application. The key detail is the `glitch` keyword argument. A "glitch" is simply a tuple that describes precisely where you would like the failure to occur. The first element of the tuple is the location of the glitch, which can be either *before* or *after* a line of code. The second element is the location of the code that will be affected by the glitch, defined by its file path and line number. What this example scenario does is inject a glitch before the `step_3` method is called, here:
 
 ```ruby
 def perform
