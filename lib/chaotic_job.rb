@@ -84,16 +84,17 @@ module ChaoticJob
     end
 
     def assert(test, msg = nil)
-      if @simulation_scenario
-        msg = lambda do
-          # copied from the original `assert` method in Minitest::Assertions
-          default_msg = "Expected #{mu_pp test} to be truthy."
-          custom_msg = original_msg.is_a?(Proc) ? original_msg.call : original_msg
-          full_msg = custom_msg || default_msg
-          "  #{@simulation_scenario}\n#{full_msg}"
-        end
+      return super unless @simulation_scenario
+
+      contextual_msg = lambda do
+        # copied from the original `assert` method in Minitest::Assertions
+        default_msg = "Expected #{mu_pp test} to be truthy."
+        custom_msg = original_msg.is_a?(Proc) ? original_msg.call : original_msg
+        full_msg = custom_msg || default_msg
+        "  #{@simulation_scenario}\n#{full_msg}"
       end
-      super(test, msg)
+
+      super(test, contextual_msg)
     end
   end
 end
