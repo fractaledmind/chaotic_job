@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [0.3.0] - 2024-12-17
+
+- Ensure that assertion failure messages raised within a simulation contain the scenario description
+- Add a `ChaoticJob.journal_entries` top-level method
+
 ## [0.2.0] - 2024-11-06
 
 - Update the `perform_all` helper method to `perform_all_jobs`
