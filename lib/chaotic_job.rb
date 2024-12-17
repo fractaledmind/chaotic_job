@@ -48,6 +48,8 @@ module ChaoticJob
   end
 
   module Helpers
+    attr_accessor :simulation_scenario
+
     def perform_all_jobs
       Performer.perform_all
     end
@@ -66,6 +68,7 @@ module ChaoticJob
       kwargs = {test: self, seed: seed}
       kwargs[:depth] = depth if depth
       kwargs[:variations] = variations if variations
+      self.simulation_scenario = nil
       Simulation.new(job, **kwargs).run(&block)
     end
 
@@ -78,6 +81,19 @@ module ChaoticJob
       else
         Scenario.new(job, **kwargs).run
       end
+    end
+
+    def assert(test, msg = nil)
+      if @simulation_scenario
+        msg = lambda do
+          # copied from the original `assert` method in Minitest::Assertions
+          default_msg = "Expected #{mu_pp test} to be truthy."
+          custom_msg = original_msg.is_a?(Proc) ? original_msg.call : original_msg
+          full_msg = custom_msg || default_msg
+          "  #{@simulation_scenario}\n#{full_msg}"
+        end
+      end
+      super(test, msg)
     end
   end
 end

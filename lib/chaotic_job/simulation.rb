@@ -84,9 +84,12 @@ module ChaoticJob
     def run_scenario(scenario, &callback)
       debug "👾 Running simulation with scenario: #{scenario}"
       @test.before_setup
+      @test.simulation_scenario = scenario.to_s
       scenario.run
       @test.after_teardown
       callback.call(scenario)
+    ensure
+      @test.simulation_scenario = nil
     end
 
     def clone_job_template
