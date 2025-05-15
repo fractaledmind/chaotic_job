@@ -3,6 +3,7 @@
 require_relative "chaotic_job/version"
 require_relative "chaotic_job/journal"
 require_relative "chaotic_job/performer"
+require_relative "chaotic_job/tracer"
 require_relative "chaotic_job/glitch"
 require_relative "chaotic_job/scenario"
 require_relative "chaotic_job/simulation"
