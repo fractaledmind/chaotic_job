@@ -11,18 +11,18 @@ module ChaoticJob
     end
 
     def capture(&block)
-      trace = TracePoint.new(:line, :call) do |tp|
+      trace = TracePoint.new(:line, :call, :return) do |tp|
         next if tp.defined_class == self.class
         next unless @constraint.call(tp)
 
         case tp.event
         when :line
           key = line_key(tp)
-        when :call
+        when :call, :return
           key = call_key(tp)
         end
 
-        @callstack << [key, tp.path, tp.lineno]
+        @callstack << [tp.event, key]
       end
 
       trace.enable(&block)
