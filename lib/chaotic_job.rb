@@ -74,7 +74,7 @@ module ChaoticJob
 
     def run_scenario(job, glitch: nil, glitches: nil, raise: nil, capture: nil, &block)
       kwargs = {glitches: glitches || [glitch]}
-      kwargs[:raise] = binding.local_variable_get(:raise) if binding.local_variable_defined?(:raise)
+      kwargs[:raise] = binding.local_variable_get(:raise) if binding.local_variable_get(:raise)
       kwargs[:capture] = capture if capture
       if block
         Scenario.new(job, **kwargs).run(&block)
