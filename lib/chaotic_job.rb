@@ -9,8 +9,9 @@ require_relative "chaotic_job/scenario"
 require_relative "chaotic_job/simulation"
 
 module ChaoticJob
-  class RetryableError < StandardError
-  end
+  Error = Class.new(StandardError)
+  RetryableError = Class.new(Error)
+  Stack = Set
 
   def self.log_to_journal!(item = nil, scope: nil)
     if item && scope

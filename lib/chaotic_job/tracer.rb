@@ -7,7 +7,7 @@ module ChaoticJob
   class Tracer
     def initialize(&constraint)
       @constraint = constraint
-      @callstack = Set.new
+      @callstack = Stack.new
     end
 
     def capture(&block)
@@ -26,7 +26,7 @@ module ChaoticJob
       end
 
       trace.enable(&block)
-      @callstack.to_a
+      @callstack
     end
 
     private
