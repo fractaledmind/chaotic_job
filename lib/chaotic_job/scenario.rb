@@ -10,7 +10,7 @@ module ChaoticJob
     def initialize(job, glitches:, raise: RetryableError, capture: /active_job/)
       @job = job
       @glitches = glitches
-      @raise = raise
+      @raise = binding.local_variable_get(:raise)
       @capture = capture
       @glitch = nil
       @events = []
