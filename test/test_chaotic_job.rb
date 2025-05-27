@@ -73,6 +73,33 @@ class TestChaoticJob < ActiveJob::TestCase
     assert_equal 2, ChaoticJob.journal_size(scope: :child)
   end
 
+  test "scenario of a simple job" do
+    class Job4 < ActiveJob::Base
+      def perform
+        step_1
+        step_2
+        step_3
+      end
+
+      def step_1
+        ChaoticJob.log_to_journal!(:step_1)
+      end
+
+      def step_2
+        ChaoticJob.log_to_journal!(:step_2)
+      end
+
+      def step_3
+        ChaoticJob.log_to_journal!(:step_3)
+      end
+    end
+
+    run_scenario(Job4.new, glitch: [:before_call, "#{Job4.name}#step_3"])
+
+    assert_equal 5, ChaoticJob.journal_size
+    assert_equal [:step_1, :step_2, :step_1, :step_2, :step_3], ChaoticJob.journal_entries
+  end
+
   test "simulation of a simple job" do
     class Job3 < ActiveJob::Base
       def perform
@@ -98,31 +125,5 @@ class TestChaoticJob < ActiveJob::TestCase
     run_simulation(Job3.new) do |scenario|
       assert_operator ChaoticJob.journal_size, :>=, 3
     end
-  end
-
-  test "scenario of a simple job" do
-    class Job4 < ActiveJob::Base
-      def perform
-        step_1
-        step_2
-        step_3
-      end
-
-      def step_1
-        ChaoticJob.log_to_journal!
-      end
-
-      def step_2
-        ChaoticJob.log_to_journal!
-      end
-
-      def step_3
-        ChaoticJob.log_to_journal!
-      end
-    end
-
-    run_scenario(Job4.new, glitch: ["before", "#{__FILE__}:108"])
-
-    assert_equal 5, ChaoticJob.journal_size
   end
 end
