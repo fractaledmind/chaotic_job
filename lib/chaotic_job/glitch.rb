@@ -16,8 +16,8 @@ module ChaoticJob
       self
     end
 
-    def before_call(key, *args, **kwargs, &block)
-      set_breakpoint(key, :call, *args, **kwargs, &block)
+    def before_call(key, ...)
+      set_breakpoint(key, :call, ...)
       self
     end
 
@@ -132,7 +132,7 @@ module ChaoticJob
         nil
       when :call
         trace.parameters.map do |type, name|
-          value = trace.binding.local_variable_get(name) rescue nil
+          value = trace.binding.local_variable_get(name) rescue nil # standard:disable Style/RescueModifier
           [type, name, value]
         end
       when :return
