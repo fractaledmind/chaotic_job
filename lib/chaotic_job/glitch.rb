@@ -1,46 +1,47 @@
 # frozen_string_literal: true
 
-# Glitch.new.before("job_crucible.rb:10") { do_anything }
-# Glitch.new.after("job_crucible.rb:11") { do_anything }
+# Glitch.new.before_line("job_crucible.rb:10") { do_anything }
+# Glitch.new.before_call("Model#method", String, name: "Joel") { do_anything }
+# Glitch.new.before_return("Model#method", String, name: "Joel") { do_anything }
 # Glitch.new.inject! { execute code to glitch }
 
 module ChaoticJob
   class Glitch
     def initialize
       @breakpoints = {}
-      @file_contents = {}
     end
 
-    def before(path_with_line, &block)
-      set_breakpoint(path_with_line, :before, &block)
+    def before_line(key, &block)
+      set_breakpoint(key, :line, &block)
+      self
     end
 
-    def after(path_with_line, &block)
-      set_breakpoint(path_with_line, :after, &block)
+    def before_call(key, ...)
+      set_breakpoint(key, :call, ...)
+      self
     end
 
-    def inject!
-      prev_key = nil
-      trace = TracePoint.new(:line) do |tp|
-        key = "#{tp.path}:#{tp.lineno}"
-        # content = @file_contents[tp.path]
-        # line = content[tp.lineno - 1]
-        # next unless line.match? key
+    def before_return(key, return_type = nil, &block)
+      set_breakpoint(key, :return, retval: return_type, &block)
+      self
+    end
 
-        begin
-          execute_block(@breakpoints[prev_key][:after]) if prev_key && @breakpoints.key?(prev_key)
+    def inject!(&block)
+      breakpoints = @breakpoints
 
-          execute_block(@breakpoints[key][:before]) if @breakpoints.key?(key)
-        ensure
-          prev_key = key
-        end
+      trace = TracePoint.new(:line, :call, :return) do |tp|
+        # :nocov: SimpleCov cannot track code executed _within_ a TracePoint
+        key = derive_key(tp)
+        matchers = derive_matchers(tp)
+
+        next unless (defn = breakpoints.dig(key, tp.event))
+        next unless matches?(defn, matchers)
+
+        execute_block(defn)
+        # :nocov:
       end
 
-      trace.enable
-      yield if block_given?
-    ensure
-      trace.disable
-      execute_block(@breakpoints[prev_key][:after]) if prev_key && @breakpoints.key?(prev_key)
+      trace.enable(&block)
     end
 
     def all_executed?
@@ -57,11 +58,51 @@ module ChaoticJob
 
     private
 
-    def set_breakpoint(path_with_line, position, &block)
-      @breakpoints[path_with_line] ||= {}
-      # contents = File.read(file_path).split("\n") unless @file_contents.key?(path_with_line)
-      # @file_contents << contents
-      @breakpoints[path_with_line][position] = {block: block, executed: false}
+    def set_breakpoint(key, event, *args, retval: nil, **kwargs, &block)
+      @breakpoints[key] ||= {}
+      @breakpoints[key][event] = {args: args, kwargs: kwargs, retval: retval, block: block, executed: false}
+    end
+
+    # :nocov: SimpleCov cannot track code executed _within_ a TracePoint
+    def matches?(defn, matchers)
+      return true if defn.nil?
+      return true if matchers.nil?
+      return true if defn[:args].empty? && defn[:kwargs].empty? && defn[:retval].nil?
+
+      args = []
+      kwargs = {}
+      retval = nil
+
+      matchers.each do |kind, name, value|
+        case kind
+        when :req
+          args << value
+        when :opt
+          args << value if value
+        when :rest
+          args.concat(value) if value
+        when :keyreq
+          kwargs[name] = value
+        when :key
+          kwargs[name] = value
+        when :keyrest
+          kwargs.merge!(value) if value
+        when :retval
+          retval = value
+        end
+      end
+
+      defn[:args].each_with_index do |type, index|
+        return false unless type === args[index]
+      end
+
+      defn[:kwargs].each do |key, type|
+        return false unless type === kwargs[key]
+      end
+
+      return false unless defn[:retval] === retval
+
+      true
     end
 
     def execute_block(handler)
@@ -71,5 +112,33 @@ module ChaoticJob
       handler[:executed] = true
       handler[:block].call
     end
+
+    def derive_key(trace)
+      case trace.event
+      when :line
+        "#{trace.path}:#{trace.lineno}"
+      when :call, :return
+        if Module === trace.self
+          "#{trace.self}.#{trace.method_id}"
+        else
+          "#{trace.defined_class}##{trace.method_id}"
+        end
+      end
+    end
+
+    def derive_matchers(trace)
+      case trace.event
+      when :line
+        nil
+      when :call
+        trace.parameters.map do |type, name|
+          value = trace.binding.local_variable_get(name) rescue nil # standard:disable Style/RescueModifier
+          [type, name, value]
+        end
+      when :return
+        [[:retval, nil, trace.return_value]]
+      end
+    end
+    # :nocov:
   end
 end

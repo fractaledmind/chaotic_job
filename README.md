@@ -44,7 +44,7 @@ The `ChaoticJob::Helpers` module provides 6 methods, 4 of which simply allow you
 
 ### Glitches
 
-A central concept in `ChaoticJob` is the _glitch_. A glitch is an error injected into the job execution flow via a [`TracePoint`](https://docs.ruby-lang.org/en/master/TracePoint.html). Glitches are transient errors, which means they occur once and only once, making them perfect for testing a job's resilience to unpredictable failures that can occur while running jobs, like network issues, upstream API outages, rate limits, or  infrastructure failure. By default, `ChaoticJob` raises a custom error defined by the gem (`ChaoticJob::RetryableError`), which the internals of the gem ensure that the job under test is configured to retry on; you can, however, raise specific errors as needed when setting up your [scenarios](#simulating-failures). By forcing a retry via the error handling mechanisms of Active Job, glitches are a simple but effective way to test that your job is resilient to any kind of transient error that the job is configured to retry on.
+A central concept in `ChaoticJob` is the _glitch_. A glitch is an error injected into the job execution flow via a [`TracePoint`](https://docs.ruby-lang.org/en/master/TracePoint.html). Glitches are transient errors, which means they occur _once_ and **only once**, making them perfect for testing a job's resilience to unpredictable failures that can occur while running jobs, like network issues, upstream API outages, rate limits, or  infrastructure failure. By default, `ChaoticJob` raises a custom error defined by the gem (`ChaoticJob::RetryableError`), which the internals of the gem ensure that the job under test is configured to retry on; you can, however, raise specific errors as needed when setting up your [scenarios](#simulating-failures). By forcing a retry via the error handling mechanisms of Active Job, glitches are a simple but effective way to test that your job is resilient to any kind of transient error that the job is configured to retry on.
 
 ### Performing Jobs
 
@@ -107,7 +107,7 @@ test "scenario of a simple job" do
     def step_3; ChaoticJob::Journal.log; end
   end
 
-  run_scenario(Job.new, glitch: ["before", "#{__FILE__}:6"])
+  run_scenario(Job.new, glitch: [:before_call, "Job#step_3"])
 
   assert_equal 5, ChaoticJob::Journal.total
 end
@@ -124,7 +124,16 @@ end
 > | `Journal.entries` | get all of the logged values under the default scope |
 > | `Journal.entries(scope: :special)` | get all of the logged values under a particular scope |
 
-In this example, the job being tested is defined within the test case. You can, of course, also test jobs defined in your application. The key detail is the `glitch` keyword argument. A "glitch" is simply a tuple that describes precisely where you would like the failure to occur. The first element of the tuple is the location of the glitch, which can be either *before* or *after* a line of code. The second element is the location of the code that will be affected by the glitch, defined by its file path and line number. What this example scenario does is inject a glitch before the `step_3` method is called, here:
+In this example, the job being tested is defined within the test case. You can, of course, also test jobs defined in your application. The key detail is the `glitch` keyword argument. A "glitch" is simply a tuple that describes precisely where you would like the failure to occur. The first element of the tuple is the _kind_ of glitch, which can be either `:before_line`, `:before_call`, or `:before_return`. These refer to the three kinds of `TracePoint` events that the gem hooks into. The second element is the _key_ for the code that will be affected by the glitch. This _key_ is a specially formatted string that defines the specific bit of code that the glitch should be inserted before. The different kinds of glitches are identified by different kinds of keys:
+|kind|key format|key example|
+|---|---|---|
+|`:before_line`|`"#{file_path}:#{line_number}"`|`"/Users/you/path/to/file.rb:123"`|
+|`:before_call`|`"#{YourClass.name}(.|#)#{method_name}"`|`"YourClass.some_class_method"`|
+|`:before_return`|`"#{YourClass.name}(.|#)#{method_name}"`|`"YourClass#some_instance_method"`|
+
+As you can see, the `:before_call` and `:before_return` keys are formatted the same, and can identify any instance (`#`) or class (`.`) method.
+
+What the example scenario above does is inject a glitch before the `step_3` method is called, here:
 
 ```ruby
 def perform
@@ -135,12 +144,33 @@ def perform
 end
 ```
 
+If we wanted to inject a glitch right before the `step_3` method finishes, we could define the glitch as a `:before_return`, like this:
+
+```ruby
+run_scenario(Job.new, glitch: [:before_return, "Job#step_3"])
+```
+
+and it would inject the transient error right here:
+
+```ruby
+def step_3
+  ChaoticJob::Journal.log
+  # <-- HERE
+end
+```
+
+Finally, if you need to inject a glitch right before a particular line of code is executed that is neither a method call nor a method return, you can use the `:before_line` key, like this:
+
+```ruby
+run_scenario(Job.new, glitch: [:before_line, "#{__FILE__}:6"])
+```
+
 If you want to simulate multiple glitches affecting a job run, you can use the plural `glitches` keyword argument instead and pass an array of tuples:
 
 ```ruby
 run_scenario(Job.new, glitches: [
-  ["before", "#{__FILE__}:6"],
-  ["before", "#{__FILE__}:7"]
+  [:before_call, "Job#step_1"],
+  [:before_return, "Job#step_1"]
 ])
 ```
 
@@ -166,28 +196,26 @@ test "simulation of a simple job" do
 end
 ```
 
-In this example, the simulation will run 12 scenarios:
+More specifically, it will create a scenario injecting a glitch before every line of code executed in your job. So, in this example, the simulation will run 12 scenarios:
 
 ```ruby
 [
-  [[:after, "test_chaotic_job.rb:69"]],
-  [[:before, "test_chaotic_job.rb:75"]],
-  [[:after, "test_chaotic_job.rb:74"]],
-  [[:before, "test_chaotic_job.rb:74"]],
-  [[:after, "test_chaotic_job.rb:68"]],
-  [[:after, "test_chaotic_job.rb:70"]],
-  [[:before, "test_chaotic_job.rb:68"]],
-  [[:after, "test_chaotic_job.rb:73"]],
-  [[:after, "test_chaotic_job.rb:75"]],
-  [[:before, "test_chaotic_job.rb:69"]],
-  [[:before, "test_chaotic_job.rb:70"]],
-  [[:before, "test_chaotic_job.rb:73"]]
+  [[:before_line, "test_chaotic_job.rb:69"]],
+  [[:before_line, "test_chaotic_job.rb:75"]],
+  [[:before_line, "test_chaotic_job.rb:74"]],
+  [[:before_line, "test_chaotic_job.rb:74"]],
+  [[:before_line, "test_chaotic_job.rb:68"]],
+  [[:before_line, "test_chaotic_job.rb:70"]],
+  [[:before_line, "test_chaotic_job.rb:68"]],
+  [[:before_line, "test_chaotic_job.rb:73"]],
+  [[:before_line, "test_chaotic_job.rb:75"]],
+  [[:before_line, "test_chaotic_job.rb:69"]],
+  [[:before_line, "test_chaotic_job.rb:70"]],
+  [[:before_line, "test_chaotic_job.rb:73"]]
 ]
 ```
 
-It generates all possible glitch scenarios by performing your job once with a [`TracePoint`](https://docs.ruby-lang.org/en/master/TracePoint.html) that captures each line executed in your job. It then computes all possible glitch locations to produce a set of scenarios that will be run.[^1] The block that you pass to `run_simulation` will be called for each scenario, allowing you to make assertions about the behavior of your job under all scenarios.
-
-[^1]: The logic to determine all possible glitch locations essentially produces two locations, before and after, for each executed line. It then dedupes the functionally equivalent locations of `[:after, "file:1"]` and `[:before, "file:2"]`.
+It generates all possible glitch scenarios by performing your job once with a [`TracePoint`](https://docs.ruby-lang.org/en/master/TracePoint.html) that captures each line executed in your job. It then computes all possible glitch locations to produce a set of scenarios that will be run. The block that you pass to `run_simulation` will be called for each scenario, allowing you to make assertions about the behavior of your job under all scenarios.
 
 In your application tests, you will want to make assertions about the side-effects that your job performs, asserting that they are correctly idempotent (only occur once) and result in the correct state.
 
