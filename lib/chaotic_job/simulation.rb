@@ -27,20 +27,10 @@ module ChaoticJob
     end
 
     def permutations
-      callstack = capture_callstack.to_a
-      error_locations = callstack.each_cons(2).flat_map do |left, right|
-        lpath, lno = left
-        rpath, rno = right
-        key = "#{lpath}:#{lno}"
-        # inject an error before and after each non-adjacent line
-        if lpath == rpath && rno == lno + 1
-          [[:before, key]]
-        else
-          [[:before, key], [:after, key]]
-        end
+      callstack = capture_callstack.map { |path, line| "#{path}:#{line}" }
+      error_locations = callstack.map do |path, lineno|
+        [:before_line, "#{path}:#{lineno}"]
       end
-      final_key = callstack.last.join(":")
-      error_locations.push [:before, final_key], [:after, final_key]
       error_locations.permutation(@depth)
     end
 

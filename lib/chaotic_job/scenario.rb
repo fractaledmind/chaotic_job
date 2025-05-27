@@ -45,8 +45,8 @@ module ChaoticJob
 
     def glitch
       @glitch ||= Glitch.new.tap do |glitch|
-        @glitches.each do |position, location, _description|
-          glitch.public_send(position, location) { raise @raise }
+        @glitches.each do |kind, location, _description|
+          glitch.public_send(kind, location) { raise @raise }
         end
       end
     end
