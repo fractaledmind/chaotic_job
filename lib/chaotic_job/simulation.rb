@@ -6,13 +6,16 @@
 # Simulation.new(job).scenarios
 module ChaoticJob
   class Simulation
-    def initialize(job, depth: 1, variations: 100, test: nil, seed: nil)
+    def initialize(job, callstack: nil, depth: 1, variations: 100, test: nil, seed: nil)
       @template = job
+      @callstack = callstack || capture_callstack
       @depth = depth
       @variations = variations
       @test = test
       @seed = seed || Random.new_seed
       @random = Random.new(@seed)
+
+      raise Error.new("callstack must be a generated via the ChaoticJob::Tracer") unless @callstack.is_a?(Stack)
     end
 
     def run(&callback)
@@ -27,9 +30,8 @@ module ChaoticJob
     end
 
     def permutations
-      callstack = capture_callstack.map { |path, line| "#{path}:#{line}" }
-      error_locations = callstack.map do |path, lineno|
-        [:before_line, "#{path}:#{lineno}"]
+      error_locations = @callstack.map do |event, key|
+        ["before_#{event}", key]
       end
       error_locations.permutation(@depth)
     end
@@ -52,23 +54,13 @@ module ChaoticJob
     private
 
     def capture_callstack
-      return @callstack if defined?(@callstack)
-
-      @callstack = Set.new
       job_class = @template.class
       job_file_path = job_class.instance_method(:perform).source_location&.first
+      tracer = Tracer.new { |tp| tp.path == job_file_path || tp.defined_class == job_class }
+      callstack = tracer.capture { @template.dup.perform_now }
 
-      trace = TracePoint.new(:line) do |tp|
-        next if tp.defined_class == self.class
-        next unless tp.path == job_file_path ||
-          tp.defined_class == job_class
-
-        @callstack << [tp.path, tp.lineno]
-      end
-
-      trace.enable { @template.dup.perform_now }
       @template.class.queue_adapter.enqueued_jobs = []
-      @callstack
+      callstack
     end
 
     def run_scenario(scenario, &callback)

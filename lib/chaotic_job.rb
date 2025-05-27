@@ -3,13 +3,15 @@
 require_relative "chaotic_job/version"
 require_relative "chaotic_job/journal"
 require_relative "chaotic_job/performer"
+require_relative "chaotic_job/tracer"
 require_relative "chaotic_job/glitch"
 require_relative "chaotic_job/scenario"
 require_relative "chaotic_job/simulation"
 
 module ChaoticJob
-  class RetryableError < StandardError
-  end
+  Error = Class.new(StandardError)
+  RetryableError = Class.new(Error)
+  Stack = Set
 
   def self.log_to_journal!(item = nil, scope: nil)
     if item && scope
