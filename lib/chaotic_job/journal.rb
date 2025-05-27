@@ -18,6 +18,7 @@ module ChaoticJob
       @logs ||= {}
       @logs[scope] ||= []
       @logs[scope] << item
+      item
     end
 
     def size(scope: :default)
@@ -29,7 +30,7 @@ module ChaoticJob
     end
 
     def top(scope: :default)
-      entries&.first
+      entries(scope: scope)&.first
     end
   end
 end

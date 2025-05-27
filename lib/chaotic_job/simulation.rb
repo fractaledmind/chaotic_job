@@ -14,6 +14,8 @@ module ChaoticJob
       @test = test
       @seed = seed || Random.new_seed
       @random = Random.new(@seed)
+
+      raise Error.new("callstack must be a generated via the ChaoticJob::Tracer") unless @callstack.is_a?(Stack)
     end
 
     def run(&callback)
@@ -28,19 +30,9 @@ module ChaoticJob
     end
 
     def permutations
-      error_locations = @callstack.each_cons(2).flat_map do |left, right|
-        lkey, lpath, lno = left
-        _key, rpath, rno = right
-
-        # inject an error before and after each non-adjacent line
-        if lpath == rpath && rno == lno + 1
-          [[:before, lkey]]
-        else
-          [[:before, lkey], [:after, lkey]]
-        end
+      error_locations = @callstack.map do |event, key|
+        ["before_#{event}", key]
       end
-      final_key = @callstack.last[0]
-      error_locations.push [:before, final_key], [:after, final_key]
       error_locations.permutation(@depth)
     end
 

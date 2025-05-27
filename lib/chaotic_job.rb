@@ -75,7 +75,7 @@ module ChaoticJob
 
     def run_scenario(job, glitch: nil, glitches: nil, raise: nil, capture: nil, &block)
       kwargs = {glitches: glitches || [glitch]}
-      kwargs[:raise] = raise if raise
+      kwargs[:raise] = binding.local_variable_get(:raise) if binding.local_variable_get(:raise)
       kwargs[:capture] = capture if capture
       if block
         Scenario.new(job, **kwargs).run(&block)
@@ -90,7 +90,7 @@ module ChaoticJob
       contextual_msg = lambda do
         # copied from the original `assert` method in Minitest::Assertions
         default_msg = "Expected #{mu_pp test} to be truthy."
-        custom_msg = original_msg.is_a?(Proc) ? original_msg.call : original_msg
+        custom_msg = msg.is_a?(Proc) ? msg.call : msg
         full_msg = custom_msg || default_msg
         "  #{@simulation_scenario}\n#{full_msg}"
       end
