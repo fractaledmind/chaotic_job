@@ -89,7 +89,7 @@ module ChaoticJob
       contextual_msg = lambda do
         # copied from the original `assert` method in Minitest::Assertions
         default_msg = "Expected #{mu_pp test} to be truthy."
-        custom_msg = original_msg.is_a?(Proc) ? original_msg.call : original_msg
+        custom_msg = msg.is_a?(Proc) ? msg.call : msg
         full_msg = custom_msg || default_msg
         "  #{@simulation_scenario}\n#{full_msg}"
       end
