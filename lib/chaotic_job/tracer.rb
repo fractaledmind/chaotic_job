@@ -12,6 +12,7 @@ module ChaoticJob
 
     def capture(&block)
       trace = TracePoint.new(:line, :call, :return) do |tp|
+        # :nocov: SimpleCov cannot track code executed _within_ a TracePoint
         next if tp.defined_class == self.class
         next unless @constraint.call(tp)
 
@@ -23,6 +24,7 @@ module ChaoticJob
         end
 
         @callstack << [tp.event, key]
+        # :nocov:
       end
 
       trace.enable(&block)
@@ -31,6 +33,7 @@ module ChaoticJob
 
     private
 
+    # :nocov: SimpleCov cannot track code executed _within_ a TracePoint
     def line_key(event)
       "#{event.path}:#{event.lineno}"
     end
@@ -42,5 +45,6 @@ module ChaoticJob
         "#{event.defined_class}##{event.method_id}"
       end
     end
+    # :nocov:
   end
 end
