@@ -27,4 +27,12 @@ class ActiveSupport::TestCase # rubocop:disable Style/ClassAndModuleChildren
 
   def after_teardown
   end
+
+  parallelize_setup do |worker|
+    SimpleCov.command_name "#{SimpleCov.command_name}-#{worker}"
+  end
+
+  parallelize_teardown do |worker|
+    SimpleCov.result
+  end
 end

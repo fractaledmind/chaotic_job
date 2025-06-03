@@ -3,13 +3,16 @@
 require_relative "chaotic_job/version"
 require_relative "chaotic_job/journal"
 require_relative "chaotic_job/performer"
+require_relative "chaotic_job/tracer"
 require_relative "chaotic_job/glitch"
 require_relative "chaotic_job/scenario"
 require_relative "chaotic_job/simulation"
+require "set"
 
 module ChaoticJob
-  class RetryableError < StandardError
-  end
+  Error = Class.new(StandardError)
+  RetryableError = Class.new(Error)
+  Stack = Set
 
   def self.log_to_journal!(item = nil, scope: nil)
     if item && scope
@@ -63,11 +66,12 @@ module ChaoticJob
       Performer.perform_all_after(time)
     end
 
-    def run_simulation(job, depth: nil, variations: nil, &block)
+    def run_simulation(job, depth: nil, variations: nil, callstack: nil, &block)
       seed = defined?(RSpec) ? RSpec.configuration.seed : Minitest.seed
       kwargs = {test: self, seed: seed}
       kwargs[:depth] = depth if depth
       kwargs[:variations] = variations if variations
+      kwargs[:callstack] = callstack if callstack
       self.simulation_scenario = nil
       Simulation.new(job, **kwargs).run(&block)
     end
