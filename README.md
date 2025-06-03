@@ -217,7 +217,24 @@ More specifically, it will create a scenario injecting a glitch before every lin
 
 It generates all possible glitch scenarios by performing your job once with a [`TracePoint`](https://docs.ruby-lang.org/en/master/TracePoint.html) that captures each line executed in your job. It then computes all possible glitch locations to produce a set of scenarios that will be run. The block that you pass to `run_simulation` will be called for each scenario, allowing you to make assertions about the behavior of your job under all scenarios.
 
-In your application tests, you will want to make assertions about the side-effects that your job performs, asserting that they are correctly idempotent (only occur once) and result in the correct state.
+If you want to have the simulation run against a larger collection of scenarios, you can capture a custom callstack using the `ChaoticJob::Tracer` class and pass it to the `run_simulation` method as the `callstack` parameter. A `Tracer` is initialized with a block that determines which `TracePoint` events to collect. You then call `capture` with a block that defines the code to be traced. The default `Simulation` tracer collects all events for the passed job and then traces the job execution, essentially like this:
+
+```ruby
+job_file_path = YourJob.instance_method(:perform).source_location&.first
+tracer = Tracer.new { |tp| tp.path == job_file_path || tp.defined_class == YourJob }
+tracer.capture { YourJob.perform_now }
+```
+
+To capture, for example, a custom callstack that includes all events within your application, you can use the `ChaoticJob::Tracer` class as follows:
+
+```ruby
+tracer = ChaoticJob::Tracer.new { |tp| tp.path.start_with?(Rails.root.to_s) }
+tracer.capture { YourJob.perform_now }
+```
+
+If you passed this callstack to your simulation, it would test what happens to your job whenever a transient glitch is injected anywhere in your application code called as a part of executing the job under test.
+
+Remember, in your application tests, you will want to make assertions about the side-effects that your job performs, asserting that they are correctly idempotent (only occur once) and result in the correct state.
 
 ## Development
 
