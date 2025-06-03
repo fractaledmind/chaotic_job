@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [0.5.0] - 2025-06-04
+
+- Add a Tracer class [#3](https://github.com/fractaledmind/chaotic_job/pull/3)
+
 ## [0.4.0] - 2025-05-27
 
 - Allow a Glitch to be defined for a method call or method return [#4](https://github.com/fractaledmind/chaotic_job/pull/4)
