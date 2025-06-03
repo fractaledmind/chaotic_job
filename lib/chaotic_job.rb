@@ -7,6 +7,7 @@ require_relative "chaotic_job/tracer"
 require_relative "chaotic_job/glitch"
 require_relative "chaotic_job/scenario"
 require_relative "chaotic_job/simulation"
+require "set"
 
 module ChaoticJob
   Error = Class.new(StandardError)
