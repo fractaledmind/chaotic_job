@@ -76,15 +76,39 @@ module ChaoticJob
       Simulation.new(job, **kwargs).run(&block)
     end
 
-    def run_scenario(job, glitch: nil, glitches: nil, raise: nil, capture: nil, &block)
-      kwargs = {glitches: glitches || [glitch]}
+    def run_scenario(job, glitch: nil, raise: nil, capture: nil, &block)
+      kwargs = {}
+
+      if glitch.is_a?(ChaoticJob::Glitch)
+        kwargs[:glitch] = glitch
+      else
+        kwargs[:glitch] = convert_array_to_glitch(glitch)
+      end
+
       kwargs[:raise] = binding.local_variable_get(:raise) if binding.local_variable_get(:raise)
       kwargs[:capture] = capture if capture
+
       if block
         Scenario.new(job, **kwargs).run(&block)
       else
         Scenario.new(job, **kwargs).run
       end
+    end
+
+    private
+
+    def convert_array_to_glitch(array_spec)
+      return nil if array_spec.nil?
+
+      event, key, *matchers = array_spec
+      glitch = ChaoticJob::Glitch.new
+
+      # Legacy format: [:before_call, "Class#method", arg1, arg2, {kwarg: value}]
+      kwargs, args = matchers.partition { |i| Hash === i }
+      kwargs = kwargs[0] || {}
+
+      glitch.public_send(event, key , *args, **kwargs)
+      glitch
     end
 
     def assert(test, msg = nil)
