@@ -54,16 +54,10 @@ module ChaoticJob
     end
 
     def all_executed?
-      @breakpoints.all? do |_location, handlers|
-        handlers.all? { |_position, handler| handler[:executed] }
+      @breakpoints.all? do |_key, handlers|
+        handlers.all? { |_event, handler| handler[:executed] }
       end
     end
-
-    # def inspect
-    #   @breakpoints.flat_map do |location, configs|
-    #     configs.keys.map { |position| "#{position}-#{location}" }
-    #   end.join("|>")
-    # end
 
     private
 
