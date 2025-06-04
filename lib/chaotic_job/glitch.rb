@@ -26,6 +26,15 @@ module ChaoticJob
       self
     end
 
+    def set_action(force: false, &block)
+      @breakpoints.each do |_key, handlers|
+        handlers.each do |_event, handler|
+          handler[:block] = block if handler[:block].nil? || force
+        end
+      end
+      self
+    end
+
     def inject!(&block)
       breakpoints = @breakpoints
 
