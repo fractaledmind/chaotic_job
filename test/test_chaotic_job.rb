@@ -151,11 +151,11 @@ class TestChaoticJob < ActiveJob::TestCase
       end
     end
 
-    glitch = ChaoticJob::Glitch.new.before_call("#{Job6.name}#step", *[2, {keyword: "2"}])
+    glitch = ChaoticJob::Glitch.new.before_call("#{Job6.name}#step", 2, {keyword: "2"})
     run_scenario(Job6.new, glitch: glitch)
 
     assert_equal 4, ChaoticJob.journal_size
-    assert_equal [[1, {:keyword=>"1"}], [1, {:keyword=>"1"}], [2, {:keyword=>"2"}], [3, {:keyword=>"3"}]], ChaoticJob.journal_entries
+    assert_equal [[1, {keyword: "1"}], [1, {keyword: "1"}], [2, {keyword: "2"}], [3, {keyword: "3"}]], ChaoticJob.journal_entries
   end
 
   test "simulation of a simple job" do

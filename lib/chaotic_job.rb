@@ -79,10 +79,10 @@ module ChaoticJob
     def run_scenario(job, glitch: nil, raise: nil, capture: nil, &block)
       kwargs = {}
 
-      if glitch.is_a?(ChaoticJob::Glitch)
-        kwargs[:glitch] = glitch
+      kwargs[:glitch] = if glitch.is_a?(ChaoticJob::Glitch)
+        glitch
       else
-        kwargs[:glitch] = convert_array_to_glitch(glitch)
+        convert_array_to_glitch(glitch)
       end
 
       kwargs[:raise] = binding.local_variable_get(:raise) if binding.local_variable_get(:raise)
@@ -107,7 +107,7 @@ module ChaoticJob
       kwargs, args = matchers.partition { |i| Hash === i }
       kwargs = kwargs[0] || {}
 
-      glitch.public_send(event, key , *args, **kwargs)
+      glitch.public_send(event, key, *args, **kwargs)
       glitch
     end
 
