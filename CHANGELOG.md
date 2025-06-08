@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [0.6.0] - 2025-06-08
+
+- `run_scenario` requires a Glitch instance [#5](https://github.com/fractaledmind/chaotic_job/pull/5)
+
 ## [0.5.0] - 2025-06-04
 
 - Add a Tracer class [#3](https://github.com/fractaledmind/chaotic_job/pull/3)
