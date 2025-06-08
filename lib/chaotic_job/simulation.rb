@@ -15,7 +15,7 @@ module ChaoticJob
       @seed = seed || Random.new_seed
       @random = Random.new(@seed)
 
-      raise Error.new("callstack must be a generated via the ChaoticJob::Tracer") unless @callstack.is_a?(Stack)
+      raise Error.new("callstack must be a generated via ChaoticJob::Tracer") unless @callstack.is_a?(Stack)
     end
 
     def run(&callback)
