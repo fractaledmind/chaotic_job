@@ -70,6 +70,7 @@ module ChaoticJob
       @test.simulation_scenario = scenario.to_s
       scenario.run
       @test.after_teardown
+      @test.assert scenario.glitched?, "Scenario did not execute glitch: #{scenario.glitch}"
       assertions.call(scenario)
     ensure
       @test.simulation_scenario = nil
