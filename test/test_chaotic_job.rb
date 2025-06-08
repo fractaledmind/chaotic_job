@@ -94,7 +94,7 @@ class TestChaoticJob < ActiveJob::TestCase
       end
     end
 
-    run_scenario(Job3.new, glitch: [:before_call, "#{Job3.name}#step_3"])
+    run_scenario(Job3.new, glitch: ChaoticJob::Glitch.before_call("#{Job3.name}#step_3"))
 
     assert_equal 5, ChaoticJob.journal_size
     assert_equal [:step_1, :step_2, :step_1, :step_2, :step_3], ChaoticJob.journal_entries
@@ -113,7 +113,7 @@ class TestChaoticJob < ActiveJob::TestCase
       end
     end
 
-    run_scenario(Job4.new, glitch: [:before_call, "#{Job4.name}#step", 2])
+    run_scenario(Job4.new, glitch: ChaoticJob::Glitch.before_call("#{Job4.name}#step", 2))
 
     assert_equal 4, ChaoticJob.journal_size
     assert_equal [1, 1, 2, 3], ChaoticJob.journal_entries
@@ -132,7 +132,7 @@ class TestChaoticJob < ActiveJob::TestCase
       end
     end
 
-    run_scenario(Job5.new, glitch: [:before_call, "#{Job5.name}#step", keyword: 2])
+    run_scenario(Job5.new, glitch: ChaoticJob::Glitch.before_call("#{Job5.name}#step", keyword: 2))
 
     assert_equal 4, ChaoticJob.journal_size
     assert_equal [1, 1, 2, 3], ChaoticJob.journal_entries
