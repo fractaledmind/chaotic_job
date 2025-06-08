@@ -1,12 +1,24 @@
 # frozen_string_literal: true
 
-# Glitch.new.before_line("job_crucible.rb:10") { do_anything }
-# Glitch.new.before_call("Model#method", String, name: "Joel") { do_anything }
-# Glitch.new.before_return("Model#method", String, name: "Joel") { do_anything }
-# Glitch.new.inject! { execute code to glitch }
+# Glitch.before_line("job_crucible.rb:10") { do_anything }
+# Glitch.before_call("Model#method", String, name: "Joel") { do_anything }
+# Glitch.before_return("Model#method", String, name: "Joel") { do_anything }
+# Glitch.inject! { execute code to glitch }
 
 module ChaoticJob
   class Glitch
+    def self.before_line(key, &block)
+      new.before_line(key, &block)
+    end
+
+    def self.before_call(key, ...)
+      new.before_call(key, ...)
+    end
+
+    def self.before_return(key, return_type = nil, &block)
+      new.before_return(key, return_type, &block)
+    end
+
     def initialize
       @breakpoints = {}
     end

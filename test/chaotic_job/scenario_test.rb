@@ -12,7 +12,7 @@ class ChaoticJob::ScenarioTest < ActiveJob::TestCase
   test "default parameters and blockless #run retries job" do
     scenario = ChaoticJob::Scenario.new(
       TestJob.new,
-      glitch: ChaoticJob::Glitch.new.before_call("#{TestJob.name}#perform")
+      glitch: ChaoticJob::Glitch.before_call("#{TestJob.name}#perform")
     )
     scenario.run
 
@@ -34,7 +34,7 @@ class ChaoticJob::ScenarioTest < ActiveJob::TestCase
   test "custom raise parameter and blockless #run does not retry job" do
     scenario = ChaoticJob::Scenario.new(
       TestJob.new,
-      glitch: ChaoticJob::Glitch.new.before_call("#{TestJob.name}#perform"),
+      glitch: ChaoticJob::Glitch.before_call("#{TestJob.name}#perform"),
       raise: StandardError
     )
     assert_raise(StandardError) do
@@ -55,7 +55,7 @@ class ChaoticJob::ScenarioTest < ActiveJob::TestCase
   test "custom capture parameter and blockless #run retries job and only captures matching events" do
     scenario = ChaoticJob::Scenario.new(
       TestJob.new,
-      glitch: ChaoticJob::Glitch.new.before_call("#{TestJob.name}#perform"),
+      glitch: ChaoticJob::Glitch.before_call("#{TestJob.name}#perform"),
       capture: /perform/
     )
     scenario.run
@@ -75,7 +75,7 @@ class ChaoticJob::ScenarioTest < ActiveJob::TestCase
   test "default parameters and #run with block executes the block but does not perform job" do
     scenario = ChaoticJob::Scenario.new(
       TestJob.new,
-      glitch: ChaoticJob::Glitch.new.before_call("#{TestJob.name}#perform")
+      glitch: ChaoticJob::Glitch.before_call("#{TestJob.name}#perform")
     )
     block_executed = false
 
@@ -96,7 +96,7 @@ class ChaoticJob::ScenarioTest < ActiveJob::TestCase
   test "all_glitched? returns false when glitch not executed" do
     scenario = ChaoticJob::Scenario.new(
       TestJob.new,
-      glitch: ChaoticJob::Glitch.new.before_call("NonExistentClass#nonexistent_method")
+      glitch: ChaoticJob::Glitch.before_call("NonExistentClass#nonexistent_method")
     )
     scenario.run
 
@@ -115,7 +115,7 @@ class ChaoticJob::ScenarioTest < ActiveJob::TestCase
   test "all_glitched? returns true when glitch is executed" do
     scenario = ChaoticJob::Scenario.new(
       TestJob.new,
-      glitch: ChaoticJob::Glitch.new.before_call("#{TestJob.name}#perform")
+      glitch: ChaoticJob::Glitch.before_call("#{TestJob.name}#perform")
     )
     scenario.run
 
@@ -152,7 +152,7 @@ class ChaoticJob::ScenarioTest < ActiveJob::TestCase
 
     scenario = ChaoticJob::Scenario.new(
       ParentJob.new,
-      glitch: ChaoticJob::Glitch.new.before_call("#{ParentJob.name}#perform")
+      glitch: ChaoticJob::Glitch.before_call("#{ParentJob.name}#perform")
     )
     scenario.run
 
