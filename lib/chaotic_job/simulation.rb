@@ -1,15 +1,13 @@
 # frozen_string_literal: true
 
 # Simulation.new(job).run { |scenario| ... }
-# Simulation.new(job).permutations
 # Simulation.new(job).variants
 # Simulation.new(job).scenarios
 module ChaoticJob
   class Simulation
-    def initialize(job, callstack: nil, depth: 1, variations: 100, test: nil, seed: nil)
+    def initialize(job, callstack: nil, variations: nil, test: nil, seed: nil)
       @template = job
       @callstack = callstack || capture_callstack
-      @depth = depth
       @variations = variations
       @test = test
       @seed = seed || Random.new_seed
@@ -18,37 +16,32 @@ module ChaoticJob
       raise Error.new("callstack must be a generated via the ChaoticJob::Tracer") unless @callstack.is_a?(Stack)
     end
 
-    def run(&callback)
-      @template.class.retry_on RetryableError, attempts: @depth + 2, wait: 1, jitter: 0
+    def run(&assertions)
+      @template.class.retry_on RetryableError, attempts: 3, wait: 1, jitter: 0
 
-      debug "👾 Running #{variants.size} simulations of the total #{permutations.size} possibilities..."
+      debug "👾 Running #{@variations || "all"} simulations of the total #{variants.size} possibilities..."
 
       scenarios.map do |scenario|
-        run_scenario(scenario, &callback)
+        run_scenario(scenario, &assertions)
         print "·"
       end
     end
 
-    def permutations
+    def variants
       error_locations = @callstack.map do |event, key|
         ["before_#{event}", key]
       end
-      error_locations.permutation(@depth)
-    end
 
-    def variants
-      return permutations if @variations.nil?
+      return error_locations if @variations.nil?
 
-      permutations.to_a.sample(@variations, random: @random)
+      error_locations.sample(@variations, random: @random)
     end
 
     def scenarios
-      variants.map do |glitches|
+      variants.map do |(event, key)|
         job = clone_job_template
-        glitch = Glitch.new.tap { |g| glitches.each { |event, key| g.public_send(event, key) } }
-        scenario = Scenario.new(job, glitch: glitch)
-        job.job_id = scenario.to_s
-        scenario
+        glitch = Glitch.public_send(event, key)
+        Scenario.new(job, glitch: glitch)
       end
     end
 

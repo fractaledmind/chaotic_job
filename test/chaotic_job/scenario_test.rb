@@ -100,7 +100,7 @@ class ChaoticJob::ScenarioTest < ActiveJob::TestCase
     )
     scenario.run
 
-    assert_equal false, scenario.all_glitched?
+    assert_equal false, scenario.glitched?
     assert_equal(
       [
         "enqueue.active_job",
@@ -119,7 +119,7 @@ class ChaoticJob::ScenarioTest < ActiveJob::TestCase
     )
     scenario.run
 
-    assert_equal true, scenario.all_glitched?
+    assert_equal true, scenario.glitched?
     assert_equal(
       [
         "enqueue.active_job",

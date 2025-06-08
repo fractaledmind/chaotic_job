@@ -5,7 +5,7 @@
 
 module ChaoticJob
   class Scenario
-    attr_reader :events
+    attr_reader :events, :glitch, :job
 
     def initialize(job, glitch:, raise: RetryableError, capture: /active_job/)
       @job = job
@@ -33,8 +33,8 @@ module ChaoticJob
       # TODO: assert that all glitch ran
     end
 
-    def all_glitched?
-      @glitch.all_executed?
+    def glitched?
+      @glitch.executed?
     end
   end
 end
