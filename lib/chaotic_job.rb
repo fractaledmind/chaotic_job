@@ -90,8 +90,6 @@ module ChaoticJob
       end
     end
 
-    private
-
     def assert(test, msg = nil)
       return super unless @simulation_scenario
 
