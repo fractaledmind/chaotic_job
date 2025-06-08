@@ -67,7 +67,7 @@ module ChaoticJob
     def run_scenario(scenario, &assertions)
       debug "👾 Running simulation with scenario: #{scenario}"
       @test.before_setup
-      @test.simulation_scenario = scenario.to_s
+      @test.simulation_scenario = scenario
       scenario.run
       @test.after_teardown
       @test.assert scenario.glitched?, "Scenario did not execute glitch: #{scenario.glitch}"
