@@ -19,7 +19,7 @@ module ChaoticJob
     def run(&assertions)
       @template.class.retry_on RetryableError, attempts: 3, wait: 1, jitter: 0
 
-      debug "👾 Running #{@variations || 'all'} simulations of the total #{variants.size} possibilities..."
+      debug "👾 Running #{@variations || "all"} simulations of the total #{variants.size} possibilities..."
 
       scenarios.map do |scenario|
         run_scenario(scenario, &assertions)

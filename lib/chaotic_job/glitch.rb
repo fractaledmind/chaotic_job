@@ -42,7 +42,7 @@ module ChaoticJob
         matchers = derive_matchers(tp)
         next unless matches?(matchers)
 
-        execute_block()
+        execute_block
         # :nocov:
       end
 
