@@ -45,7 +45,8 @@ module ChaoticJob
     def scenarios
       variants.map do |glitches|
         job = clone_job_template
-        scenario = Scenario.new(job, glitches: glitches)
+        glitch = Glitch.new.tap { |g| glitches.each { |event, key| g.public_send(event, key) } }
+        scenario = Scenario.new(job, glitch: glitch)
         job.job_id = scenario.to_s
         scenario
       end

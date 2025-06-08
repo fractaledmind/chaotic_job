@@ -1,12 +1,24 @@
 # frozen_string_literal: true
 
-# Glitch.new.before_line("job_crucible.rb:10") { do_anything }
-# Glitch.new.before_call("Model#method", String, name: "Joel") { do_anything }
-# Glitch.new.before_return("Model#method", String, name: "Joel") { do_anything }
-# Glitch.new.inject! { execute code to glitch }
+# Glitch.before_line("job_crucible.rb:10") { do_anything }
+# Glitch.before_call("Model#method", String, name: "Joel") { do_anything }
+# Glitch.before_return("Model#method", String, name: "Joel") { do_anything }
+# Glitch.inject! { execute code to glitch }
 
 module ChaoticJob
   class Glitch
+    def self.before_line(key, &block)
+      new.before_line(key, &block)
+    end
+
+    def self.before_call(key, ...)
+      new.before_call(key, ...)
+    end
+
+    def self.before_return(key, return_type = nil, &block)
+      new.before_return(key, return_type, &block)
+    end
+
     def initialize
       @breakpoints = {}
     end
@@ -23,6 +35,15 @@ module ChaoticJob
 
     def before_return(key, return_type = nil, &block)
       set_breakpoint(key, :return, retval: return_type, &block)
+      self
+    end
+
+    def set_action(force: false, &block)
+      @breakpoints.each do |_key, handlers|
+        handlers.each do |_event, handler|
+          handler[:block] = block if handler[:block].nil? || force
+        end
+      end
       self
     end
 
@@ -45,16 +66,10 @@ module ChaoticJob
     end
 
     def all_executed?
-      @breakpoints.all? do |_location, handlers|
-        handlers.all? { |_position, handler| handler[:executed] }
+      @breakpoints.all? do |_key, handlers|
+        handlers.all? { |_event, handler| handler[:executed] }
       end
     end
-
-    # def inspect
-    #   @breakpoints.flat_map do |location, configs|
-    #     configs.keys.map { |position| "#{position}-#{location}" }
-    #   end.join("|>")
-    # end
 
     private
 

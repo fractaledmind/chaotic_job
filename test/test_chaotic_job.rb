@@ -74,7 +74,7 @@ class TestChaoticJob < ActiveJob::TestCase
   end
 
   test "scenario of a simple job" do
-    class Job4 < ActiveJob::Base
+    class Job3 < ActiveJob::Base
       def perform
         step_1
         step_2
@@ -94,14 +94,72 @@ class TestChaoticJob < ActiveJob::TestCase
       end
     end
 
-    run_scenario(Job4.new, glitch: [:before_call, "#{Job4.name}#step_3"])
+    run_scenario(Job3.new, glitch: ChaoticJob::Glitch.before_call("#{Job3.name}#step_3"))
 
     assert_equal 5, ChaoticJob.journal_size
     assert_equal [:step_1, :step_2, :step_1, :step_2, :step_3], ChaoticJob.journal_entries
   end
 
+  test "scenario with glitch argument" do
+    class Job4 < ActiveJob::Base
+      def perform
+        step(1)
+        step(2)
+        step(3)
+      end
+
+      def step(argument)
+        ChaoticJob.log_to_journal!(argument)
+      end
+    end
+
+    run_scenario(Job4.new, glitch: ChaoticJob::Glitch.before_call("#{Job4.name}#step", 2))
+
+    assert_equal 4, ChaoticJob.journal_size
+    assert_equal [1, 1, 2, 3], ChaoticJob.journal_entries
+  end
+
+  test "scenario with glitch keyword argument" do
+    class Job5 < ActiveJob::Base
+      def perform
+        step(keyword: 1)
+        step(keyword: 2)
+        step(keyword: 3)
+      end
+
+      def step(keyword:)
+        ChaoticJob.log_to_journal!(keyword)
+      end
+    end
+
+    run_scenario(Job5.new, glitch: ChaoticJob::Glitch.before_call("#{Job5.name}#step", keyword: 2))
+
+    assert_equal 4, ChaoticJob.journal_size
+    assert_equal [1, 1, 2, 3], ChaoticJob.journal_entries
+  end
+
+  test "scenario with glitch keyword and positional argument" do
+    class Job6 < ActiveJob::Base
+      def perform
+        step(1, keyword: "1")
+        step(2, keyword: "2")
+        step(3, keyword: "3")
+      end
+
+      def step(*positional)
+        ChaoticJob.log_to_journal!(positional)
+      end
+    end
+
+    glitch = ChaoticJob::Glitch.new.before_call("#{Job6.name}#step", 2, {keyword: "2"})
+    run_scenario(Job6.new, glitch: glitch)
+
+    assert_equal 4, ChaoticJob.journal_size
+    assert_equal [[1, {keyword: "1"}], [1, {keyword: "1"}], [2, {keyword: "2"}], [3, {keyword: "3"}]], ChaoticJob.journal_entries
+  end
+
   test "simulation of a simple job" do
-    class Job3 < ActiveJob::Base
+    class Job7 < ActiveJob::Base
       def perform
         step_1
         step_2
@@ -122,7 +180,7 @@ class TestChaoticJob < ActiveJob::TestCase
     end
 
     assert true
-    run_simulation(Job3.new) do |scenario|
+    run_simulation(Job7.new) do |scenario|
       assert_operator ChaoticJob.journal_size, :>=, 3
     end
   end

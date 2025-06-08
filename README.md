@@ -107,7 +107,7 @@ test "scenario of a simple job" do
     def step_3; ChaoticJob::Journal.log; end
   end
 
-  run_scenario(Job.new, glitch: [:before_call, "Job#step_3"])
+  run_scenario(Job.new, glitch: ChaoticJob::Glitch.before_call("Job#step_3"))
 
   assert_equal 5, ChaoticJob::Journal.total
 end
@@ -124,14 +124,16 @@ end
 > | `Journal.entries` | get all of the logged values under the default scope |
 > | `Journal.entries(scope: :special)` | get all of the logged values under a particular scope |
 
-In this example, the job being tested is defined within the test case. You can, of course, also test jobs defined in your application. The key detail is the `glitch` keyword argument. A "glitch" is simply a tuple that describes precisely where you would like the failure to occur. The first element of the tuple is the _kind_ of glitch, which can be either `:before_line`, `:before_call`, or `:before_return`. These refer to the three kinds of `TracePoint` events that the gem hooks into. The second element is the _key_ for the code that will be affected by the glitch. This _key_ is a specially formatted string that defines the specific bit of code that the glitch should be inserted before. The different kinds of glitches are identified by different kinds of keys:
+In this example, the job being tested is defined within the test case. You can, of course, also test jobs defined in your application. The key detail is the `glitch` keyword argument.
+
+A "glitch" is describes precisely where you would like the failure to occur. The description is composed first of the _kind_ of glitch, which can be either `before_line`, `before_call`, or `before_return`. These refer to the three kinds of `TracePoint` events that the gem hooks into. The second element is the _key_ for the code that will be affected by the glitch. This _key_ is a specially formatted string that defines the specific bit of code that the glitch should be inserted before. The different kinds of glitches are identified by different kinds of keys:
 |kind|key format|key example|
 |---|---|---|
-|`:before_line`|`"#{file_path}:#{line_number}"`|`"/Users/you/path/to/file.rb:123"`|
-|`:before_call`|`"#{YourClass.name}(.|#)#{method_name}"`|`"YourClass.some_class_method"`|
-|`:before_return`|`"#{YourClass.name}(.|#)#{method_name}"`|`"YourClass#some_instance_method"`|
+|`before_line`|`"#{file_path}:#{line_number}"`|`"/Users/you/path/to/file.rb:123"`|
+|`before_call`|`"#{YourClass.name}(.|#)#{method_name}"`|`"YourClass.some_class_method"`|
+|`before_return`|`"#{YourClass.name}(.|#)#{method_name}"`|`"YourClass#some_instance_method"`|
 
-As you can see, the `:before_call` and `:before_return` keys are formatted the same, and can identify any instance (`#`) or class (`.`) method.
+As you can see, the `before_call` and `before_return` keys are formatted the same, and can identify any instance (`#`) or class (`.`) method.
 
 What the example scenario above does is inject a glitch before the `step_3` method is called, here:
 
@@ -144,10 +146,10 @@ def perform
 end
 ```
 
-If we wanted to inject a glitch right before the `step_3` method finishes, we could define the glitch as a `:before_return`, like this:
+If we wanted to inject a glitch right before the `step_3` method finishes, we could define the glitch as a `before_return`, like this:
 
 ```ruby
-run_scenario(Job.new, glitch: [:before_return, "Job#step_3"])
+run_scenario(Job.new, glitch: ChaoticJob::Glitch.before_return("Job#step_3"))
 ```
 
 and it would inject the transient error right here:
@@ -159,19 +161,21 @@ def step_3
 end
 ```
 
-Finally, if you need to inject a glitch right before a particular line of code is executed that is neither a method call nor a method return, you can use the `:before_line` key, like this:
+Finally, if you need to inject a glitch right before a particular line of code is executed that is neither a method call nor a method return, you can use the `before_line` key, like this:
 
 ```ruby
-run_scenario(Job.new, glitch: [:before_line, "#{__FILE__}:6"])
+run_scenario(Job.new, glitch: ChaoticJob::Glitch.before_line("#{__FILE__}:6"))
 ```
 
-If you want to simulate multiple glitches affecting a job run, you can use the plural `glitches` keyword argument instead and pass an array of tuples:
+If you want to simulate multiple glitches affecting a job run, you simply define additional failure points using the fluid interface of the `ChaoticJob::Glitch` class:
 
 ```ruby
-run_scenario(Job.new, glitches: [
-  [:before_call, "Job#step_1"],
-  [:before_return, "Job#step_1"]
-])
+run_scenario(
+  Job.new,
+  glitch: ChaoticJob::Glitch
+    .before_call("Job#step_1")
+    .before_return("Job#step_3")
+)
 ```
 
 Scenario testing is useful to test the behavior of a job under a specific set of conditions. But, if you want to test the behavior of a job under a variety of conditions, you can use the `run_simulation` method. Instead of running a single scenario, a simulation will run the full set of possible error scenarios for your job.

@@ -76,16 +76,21 @@ module ChaoticJob
       Simulation.new(job, **kwargs).run(&block)
     end
 
-    def run_scenario(job, glitch: nil, glitches: nil, raise: nil, capture: nil, &block)
-      kwargs = {glitches: glitches || [glitch]}
+    def run_scenario(job, glitch:, raise: nil, capture: nil, &block)
+      kwargs = {}
+
+      kwargs[:glitch] = glitch
       kwargs[:raise] = binding.local_variable_get(:raise) if binding.local_variable_get(:raise)
       kwargs[:capture] = capture if capture
+
       if block
         Scenario.new(job, **kwargs).run(&block)
       else
         Scenario.new(job, **kwargs).run
       end
     end
+
+    private
 
     def assert(test, msg = nil)
       return super unless @simulation_scenario

@@ -7,20 +7,20 @@ module ChaoticJob
   class Scenario
     attr_reader :events
 
-    def initialize(job, glitches:, raise: RetryableError, capture: /active_job/)
+    def initialize(job, glitch:, raise: RetryableError, capture: /active_job/)
       @job = job
-      @glitches = glitches
+      @glitch = (Glitch === glitch) ? glitch : (raise Error.new("glitch: must be a Glitch instance, but got #{glitch.inspect}"))
       @raise = binding.local_variable_get(:raise)
       @capture = capture
-      @glitch = nil
       @events = []
     end
 
     def run(&block)
       @job.class.retry_on RetryableError, attempts: 10, wait: 1, jitter: 0
+      @glitch.set_action { raise @raise }
 
       ActiveSupport::Notifications.subscribed(->(event) { @events << event.dup }, @capture) do
-        glitch.inject! do
+        @glitch.inject! do
           @job.enqueue
           if block
             block.call
@@ -30,25 +30,11 @@ module ChaoticJob
         end
       end
 
-      # TODO: assert that all glitches ran
-    end
-
-    def to_s
-      @glitches.map { |position, location| "#{position}-#{location}" }.join("|>")
+      # TODO: assert that all glitch ran
     end
 
     def all_glitched?
       @glitch.all_executed?
-    end
-
-    private
-
-    def glitch
-      @glitch ||= Glitch.new.tap do |glitch|
-        @glitches.each do |kind, location, _description|
-          glitch.public_send(kind, location) { raise @raise }
-        end
-      end
     end
   end
 end
