@@ -90,8 +90,6 @@ module ChaoticJob
       end
     end
 
-    private
-
     def assert(test, msg = nil)
       return super unless @simulation_scenario
 
@@ -100,7 +98,8 @@ module ChaoticJob
         default_msg = "Expected #{mu_pp test} to be truthy."
         custom_msg = msg.is_a?(Proc) ? msg.call : msg
         full_msg = custom_msg || default_msg
-        "  #{@simulation_scenario}\n#{full_msg}"
+        indented_scenario = @simulation_scenario.to_s.split("\n").join("\n  ")
+        "  #{indented_scenario}\n#{full_msg}"
       end
 
       super(test, contextual_msg)
