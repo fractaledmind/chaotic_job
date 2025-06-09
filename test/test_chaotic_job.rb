@@ -151,7 +151,7 @@ class TestChaoticJob < ActiveJob::TestCase
       end
     end
 
-    glitch = ChaoticJob::Glitch.new.before_call("#{Job6.name}#step", 2, {keyword: "2"})
+    glitch = ChaoticJob::Glitch.before_call("#{Job6.name}#step", 2, {keyword: "2"})
     run_scenario(Job6.new, glitch: glitch)
 
     assert_equal 4, ChaoticJob.journal_size
