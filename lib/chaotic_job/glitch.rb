@@ -8,81 +8,57 @@
 module ChaoticJob
   class Glitch
     def self.before_line(key, &block)
-      new.before_line(key, &block)
+      new(key, :line, &block)
     end
 
     def self.before_call(key, ...)
-      new.before_call(key, ...)
+      new(key, :call, ...)
     end
 
     def self.before_return(key, return_type = nil, &block)
-      new.before_return(key, return_type, &block)
+      new(key, :return, retval: return_type, &block)
     end
 
-    def initialize
-      @breakpoints = {}
-    end
-
-    def before_line(key, &block)
-      set_breakpoint(key, :line, &block)
-      self
-    end
-
-    def before_call(key, ...)
-      set_breakpoint(key, :call, ...)
-      self
-    end
-
-    def before_return(key, return_type = nil, &block)
-      set_breakpoint(key, :return, retval: return_type, &block)
-      self
+    def initialize(key, event, *args, retval: nil, **kwargs, &block)
+      @event = event
+      @key = key
+      @args = args
+      @retval = retval
+      @kwargs = kwargs
+      @block = block
+      @executed = false
     end
 
     def set_action(force: false, &block)
-      @breakpoints.each do |_key, handlers|
-        handlers.each do |_event, handler|
-          handler[:block] = block if handler[:block].nil? || force
-        end
-      end
-      self
+      @block = block if @block.nil? || force
     end
 
     def inject!(&block)
-      breakpoints = @breakpoints
-
-      trace = TracePoint.new(:line, :call, :return) do |tp|
+      trace = TracePoint.new(@event) do |tp|
         # :nocov: SimpleCov cannot track code executed _within_ a TracePoint
         key = derive_key(tp)
+        next unless @key == key
+
         matchers = derive_matchers(tp)
+        next unless matches?(matchers)
 
-        next unless (defn = breakpoints.dig(key, tp.event))
-        next unless matches?(defn, matchers)
-
-        execute_block(defn)
+        execute_block
         # :nocov:
       end
 
       trace.enable(&block)
     end
 
-    def all_executed?
-      @breakpoints.all? do |_key, handlers|
-        handlers.all? { |_event, handler| handler[:executed] }
-      end
+    def executed?
+      @executed
     end
 
     private
 
-    def set_breakpoint(key, event, *args, retval: nil, **kwargs, &block)
-      @breakpoints[key] ||= {}
-      @breakpoints[key][event] = {args: args, kwargs: kwargs, retval: retval, block: block, executed: false}
-    end
-
     # :nocov: SimpleCov cannot track code executed _within_ a TracePoint
-    def matches?(defn, matchers)
-      return true if defn.nil?
+    def matches?(matchers)
       return true if matchers.nil?
-      return true if defn[:args].empty? && defn[:kwargs].empty? && defn[:retval].nil?
+      return true if @args.empty? && @kwargs.empty? && @retval.nil?
 
       args = []
       kwargs = {}
@@ -107,25 +83,24 @@ module ChaoticJob
         end
       end
 
-      defn[:args].each_with_index do |type, index|
+      @args.each_with_index do |type, index|
         return false unless type === args[index]
       end
 
-      defn[:kwargs].each do |key, type|
+      @kwargs.each do |key, type|
         return false unless type === kwargs[key]
       end
 
-      return false unless defn[:retval] === retval
+      return false unless @retval === retval
 
       true
     end
 
-    def execute_block(handler)
-      return unless handler
-      return if handler[:executed]
+    def execute_block
+      return if @executed
 
-      handler[:executed] = true
-      handler[:block].call
+      @executed = true
+      @block.call
     end
 
     def derive_key(trace)
