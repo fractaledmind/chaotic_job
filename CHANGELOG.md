@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [0.7.0] - 2025-06-09
+
+- Glitch only works with singular event + key definition [#6](https://github.com/fractaledmind/chaotic_job/pull/6)
+- Scenarios assert the glitch was executed [#7](https://github.com/fractaledmind/chaotic_job/pull/7)
+- Add helper methods to create a Glitch of the various kinds [#8](https://github.com/fractaledmind/chaotic_job/pull/8)
+- Improve test coverage [#9](https://github.com/fractaledmind/chaotic_job/pull/9)
+
 ## [0.6.0] - 2025-06-08
 
 - `run_scenario` requires a Glitch instance [#5](https://github.com/fractaledmind/chaotic_job/pull/5)
