@@ -253,4 +253,52 @@ class TestChaoticJob < ActiveJob::TestCase
     assert_equal [:step_1, :step_2, :glitch], ChaoticJob.journal_entries
     assert glitch.executed?
   end
+
+  test "scenario with raise argument" do
+    assert_raise(StandardError) do
+      run_scenario(
+        TestJob.new,
+        glitch: ChaoticJob::Glitch.before_call("#{TestJob.name}#perform"),
+        raise: StandardError
+      )
+    end
+  end
+
+  test "scenario with capture argument" do
+    scenario = run_scenario(
+      TestJob.new,
+      glitch: ChaoticJob::Glitch.before_call("#{TestJob.name}#perform"),
+      capture: /perform/
+    )
+
+    assert_equal(
+      [
+        "perform_start.active_job",
+        "perform.active_job",
+        "perform_start.active_job",
+        "perform.active_job"
+      ],
+      scenario.events.map(&:name)
+    )
+    assert_equal [:performed], ChaoticJob.journal_entries
+  end
+
+  test "scenario with block" do
+    block_executed = false
+    scenario = run_scenario(
+      TestJob.new,
+      glitch: ChaoticJob::Glitch.before_call("#{TestJob.name}#perform")
+    ) do
+      block_executed = true
+    end
+
+    assert block_executed
+    assert_equal(
+      [
+        "enqueue.active_job"
+      ],
+      scenario.events.map(&:name)
+    )
+    assert_nil ChaoticJob.journal_entries
+  end
 end

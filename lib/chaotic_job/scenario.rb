@@ -30,7 +30,7 @@ module ChaoticJob
         end
       end
 
-      # TODO: assert that all glitch ran
+      self
     end
 
     def glitched?
