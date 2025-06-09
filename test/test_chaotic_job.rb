@@ -184,4 +184,73 @@ class TestChaoticJob < ActiveJob::TestCase
       assert_operator ChaoticJob.journal_size, :>=, 3
     end
   end
+
+  test "glitch before line" do
+    class Job8 < ActiveJob::Base
+      def perform
+        step_1
+        step_2
+      end
+
+      def step_1
+        ChaoticJob.log_to_journal!(:step_1)
+      end
+
+      def step_2
+        ChaoticJob.log_to_journal!(:step_2)
+      end
+    end
+
+    glitch = glitch_before_line("#{__FILE__}:200") { ChaoticJob.log_to_journal!(:glitch) }
+    glitch.inject! { Job8.perform_now }
+
+    assert_equal [:step_1, :glitch, :step_2], ChaoticJob.journal_entries
+    assert glitch.executed?
+  end
+
+  test "glitch before call" do
+    class Job9 < ActiveJob::Base
+      def perform
+        step_1
+        step_2
+      end
+
+      def step_1
+        ChaoticJob.log_to_journal!(:step_1)
+      end
+
+      def step_2
+        ChaoticJob.log_to_journal!(:step_2)
+      end
+    end
+
+    glitch = glitch_before_call("#{Job9.name}#step_2") { ChaoticJob.log_to_journal!(:glitch) }
+    glitch.inject! { Job9.perform_now }
+
+    assert_equal [:step_1, :glitch, :step_2], ChaoticJob.journal_entries
+    assert glitch.executed?
+  end
+
+  test "glitch before return" do
+    class Job10 < ActiveJob::Base
+      def perform
+        step_1
+        step_2
+      end
+
+      def step_1
+        ChaoticJob.log_to_journal!(:step_1)
+      end
+
+      def step_2
+        ChaoticJob.log_to_journal!(:step_2)
+      end
+    end
+
+    glitch = glitch_before_return("#{Job10.name}#step_2") { ChaoticJob.log_to_journal!(:glitch) }
+    glitch.inject! { Job10.perform_now }
+
+    assert_equal [:step_1, :step_2, :glitch], ChaoticJob.journal_entries
+    assert glitch.executed?
+  end
 end
