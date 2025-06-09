@@ -19,6 +19,8 @@ module ChaoticJob
       new(key, :return, retval: return_type, &block)
     end
 
+    attr_reader :key, :event
+
     def initialize(key, event, *args, retval: nil, **kwargs, &block)
       @event = event
       @key = key

@@ -176,4 +176,94 @@ class ChaoticJob::ScenarioTest < ActiveJob::TestCase
     )
     assert_equal [:parent_start, :parent_end, :child], ChaoticJob.journal_entries
   end
+
+  test "before_line? returns true when glitch matches" do
+    key = "#{__FILE__}:181"
+    scenario = ChaoticJob::Scenario.new(
+      TestJob.new,
+      glitch: ChaoticJob::Glitch.before_line(key)
+    )
+
+    assert scenario.before_line? key
+  end
+
+  test "before_line? returns false when glitch does not match key" do
+    key = "#{__FILE__}:191"
+    scenario = ChaoticJob::Scenario.new(
+      TestJob.new,
+      glitch: ChaoticJob::Glitch.before_line(key)
+    )
+
+    refute scenario.before_line? "#{__FILE__}:000"
+  end
+
+  test "before_line? returns false when glitch does not match event" do
+    key = "#{__FILE__}:191"
+    scenario = ChaoticJob::Scenario.new(
+      TestJob.new,
+      glitch: ChaoticJob::Glitch.before_call(key)
+    )
+
+    refute scenario.before_line? key
+  end
+
+  test "before_call? returns true when glitch matches" do
+    key = "#{TestJob.name}#perform"
+    scenario = ChaoticJob::Scenario.new(
+      TestJob.new,
+      glitch: ChaoticJob::Glitch.before_call(key)
+    )
+
+    assert scenario.before_call? key
+  end
+
+  test "before_call? returns false when glitch does not match key" do
+    key = "#{TestJob.name}#perform"
+    scenario = ChaoticJob::Scenario.new(
+      TestJob.new,
+      glitch: ChaoticJob::Glitch.before_call(key)
+    )
+
+    refute scenario.before_call? "SomeJob#perform"
+  end
+
+  test "before_call? returns false when glitch does not match event" do
+    key = "#{__FILE__}:191"
+    scenario = ChaoticJob::Scenario.new(
+      TestJob.new,
+      glitch: ChaoticJob::Glitch.before_return(key)
+    )
+
+    refute scenario.before_call? key
+  end
+
+  test "before_return? returns true when glitch matches" do
+    key = "#{TestJob.name}#perform"
+    scenario = ChaoticJob::Scenario.new(
+      TestJob.new,
+      glitch: ChaoticJob::Glitch.before_return(key)
+    )
+
+    assert scenario.before_return? key
+  end
+
+  test "before_return? returns false when glitch does not match key" do
+    key = "#{TestJob.name}#perform"
+    scenario = ChaoticJob::Scenario.new(
+      TestJob.new,
+      glitch: ChaoticJob::Glitch.before_return(key)
+    )
+
+    refute scenario.before_return? "SomeJob#perform"
+  end
+
+  test "before_return? returns false when glitch does not match event" do
+    key = "#{__FILE__}:191"
+    scenario = ChaoticJob::Scenario.new(
+      TestJob.new,
+      glitch: ChaoticJob::Glitch.before_line(key)
+    )
+
+    refute scenario.before_return? key
+  end
 end

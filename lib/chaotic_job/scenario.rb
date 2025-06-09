@@ -36,5 +36,23 @@ module ChaoticJob
     def glitched?
       @glitch.executed?
     end
+
+    def before_line?(key)
+      return false unless :line == @glitch.event
+
+      key == @glitch.key
+    end
+
+    def before_call?(key)
+      return false unless :call == @glitch.event
+
+      key == @glitch.key
+    end
+
+    def before_return?(key)
+      return false unless :return == @glitch.event
+
+      key == @glitch.key
+    end
   end
 end
