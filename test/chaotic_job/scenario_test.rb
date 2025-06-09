@@ -2,12 +2,6 @@
 
 require "test_helper"
 
-class TestJob < ActiveJob::Base
-  def perform
-    ChaoticJob.log_to_journal!(:performed)
-  end
-end
-
 class ChaoticJob::ScenarioTest < ActiveJob::TestCase
   test "default parameters and blockless #run retries job" do
     scenario = ChaoticJob::Scenario.new(

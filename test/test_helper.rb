@@ -14,6 +14,21 @@ require "active_job"
 
 ActiveJob::Base.logger = Logger.new(ENV["LOG"].present? ? $stdout : IO::NULL)
 
+class TestJob < ActiveJob::Base
+  def perform(value = :performed, recursions: nil, wait: nil, total: nil)
+    ChaoticJob.log_to_journal!(recursions || value)
+
+    if recursions && recursions > 0
+      total ||= recursions
+      delay = wait ? (wait * (total - recursions + 1)) : 0
+
+      TestJob
+        .set(wait: delay)
+        .perform_later(value, recursions: recursions - 1, wait: wait, total: total)
+    end
+  end
+end
+
 class ActiveSupport::TestCase # rubocop:disable Style/ClassAndModuleChildren
   # Run tests in parallel with specified workers
   parallelize(workers: :number_of_processors)
