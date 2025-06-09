@@ -205,7 +205,7 @@ class TestChaoticJob < ActiveJob::TestCase
     glitch.inject! { Job8.perform_now }
 
     assert_equal [:step_1, :glitch, :step_2], ChaoticJob.journal_entries
-    assert glitch.all_executed?
+    assert glitch.executed?
   end
 
   test "glitch before call" do
@@ -228,7 +228,7 @@ class TestChaoticJob < ActiveJob::TestCase
     glitch.inject! { Job9.perform_now }
 
     assert_equal [:step_1, :glitch, :step_2], ChaoticJob.journal_entries
-    assert glitch.all_executed?
+    assert glitch.executed?
   end
 
   test "glitch before return" do
@@ -251,6 +251,6 @@ class TestChaoticJob < ActiveJob::TestCase
     glitch.inject! { Job10.perform_now }
 
     assert_equal [:step_1, :step_2, :glitch], ChaoticJob.journal_entries
-    assert glitch.all_executed?
+    assert glitch.executed?
   end
 end
