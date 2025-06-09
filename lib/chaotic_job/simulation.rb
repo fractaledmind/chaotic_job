@@ -13,7 +13,7 @@ module ChaoticJob
       @seed = seed || Random.new_seed
       @random = Random.new(@seed)
 
-      raise Error.new("callstack must be a generated via the ChaoticJob::Tracer") unless @callstack.is_a?(Stack)
+      raise Error.new("callstack must be a generated via ChaoticJob::Tracer") unless @callstack.is_a?(Stack)
     end
 
     def run(&assertions)
@@ -57,13 +57,14 @@ module ChaoticJob
       callstack
     end
 
-    def run_scenario(scenario, &callback)
+    def run_scenario(scenario, &assertions)
       debug "👾 Running simulation with scenario: #{scenario}"
       @test.before_setup
-      @test.simulation_scenario = scenario.to_s
+      @test.simulation_scenario = scenario
       scenario.run
       @test.after_teardown
-      callback.call(scenario)
+      @test.assert scenario.glitched?, "Scenario did not execute glitch: #{scenario.glitch}"
+      assertions.call(scenario)
     ensure
       @test.simulation_scenario = nil
     end
