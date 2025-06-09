@@ -3,7 +3,7 @@
 [![Gem Version](https://badge.fury.io/rb/chaotic_job.svg)](https://rubygems.org/gems/chaotic_job)
 [![Gem Downloads](https://img.shields.io/gem/dt/chaotic_job)](https://rubygems.org/gems/chaotic_job)
 ![Tests](https://github.com/fractaledmind/chaotic_job/actions/workflows/main.yml/badge.svg)
-![Coverage](https://img.shields.io/badge/code%20coverage-92%25-success)
+![Coverage](https://img.shields.io/badge/code%20coverage-98%25-success)
 [![Sponsors](https://img.shields.io/github/sponsors/fractaledmind?color=eb4aaa&logo=GitHub%20Sponsors)](https://github.com/sponsors/fractaledmind)
 [![Twitter Follow](https://img.shields.io/twitter/url?label=%40fractaledmind&style=social&url=https%3A%2F%2Ftwitter.com%2Ffractaledmind)](https://twitter.com/fractaledmind)
 
@@ -167,17 +167,6 @@ Finally, if you need to inject a glitch right before a particular line of code i
 run_scenario(Job.new, glitch: ChaoticJob::Glitch.before_line("#{__FILE__}:6"))
 ```
 
-If you want to simulate multiple glitches affecting a job run, you simply define additional failure points using the fluid interface of the `ChaoticJob::Glitch` class:
-
-```ruby
-run_scenario(
-  Job.new,
-  glitch: ChaoticJob::Glitch
-    .before_call("Job#step_1")
-    .before_return("Job#step_3")
-)
-```
-
 Scenario testing is useful to test the behavior of a job under a specific set of conditions. But, if you want to test the behavior of a job under a variety of conditions, you can use the `run_simulation` method. Instead of running a single scenario, a simulation will run the full set of possible error scenarios for your job.
 
 ```ruby
@@ -203,23 +192,21 @@ end
 More specifically, it will create a scenario injecting a glitch before every line of code executed in your job. So, in this example, the simulation will run 12 scenarios:
 
 ```ruby
-[
-  [[:before_line, "test_chaotic_job.rb:69"]],
-  [[:before_line, "test_chaotic_job.rb:75"]],
-  [[:before_line, "test_chaotic_job.rb:74"]],
-  [[:before_line, "test_chaotic_job.rb:74"]],
-  [[:before_line, "test_chaotic_job.rb:68"]],
-  [[:before_line, "test_chaotic_job.rb:70"]],
-  [[:before_line, "test_chaotic_job.rb:68"]],
-  [[:before_line, "test_chaotic_job.rb:73"]],
-  [[:before_line, "test_chaotic_job.rb:75"]],
-  [[:before_line, "test_chaotic_job.rb:69"]],
-  [[:before_line, "test_chaotic_job.rb:70"]],
-  [[:before_line, "test_chaotic_job.rb:73"]]
-]
+#<Set:
+ {[:call, "Job#perform"],
+  [:line, "file.rb:3"],
+  [:call, "Job#step_1"],
+  [:return, "Job#step_1"],
+  [:line, "file.rb:4"],
+  [:call, "Job#step_2"],
+  [:return, "Job#step_2"],
+  [:line, "file.rb:5"],
+  [:call, "Job#step_3"],
+  [:return, "Job#step_3"],
+  [:return, "Job#perform"]}>
 ```
 
-It generates all possible glitch scenarios by performing your job once with a [`TracePoint`](https://docs.ruby-lang.org/en/master/TracePoint.html) that captures each line executed in your job. It then computes all possible glitch locations to produce a set of scenarios that will be run. The block that you pass to `run_simulation` will be called for each scenario, allowing you to make assertions about the behavior of your job under all scenarios.
+It generates all possible glitch scenarios by performing your job once with a [`TracePoint`](https://docs.ruby-lang.org/en/master/TracePoint.html) that captures every event executed as a part of your job running. The block that you pass to `run_simulation` will be called for each scenario, allowing you to make assertions about the behavior of your job under all scenarios.
 
 If you want to have the simulation run against a larger collection of scenarios, you can capture a custom callstack using the `ChaoticJob::Tracer` class and pass it to the `run_simulation` method as the `callstack` parameter. A `Tracer` is initialized with a block that determines which `TracePoint` events to collect. You then call `capture` with a block that defines the code to be traced. The default `Simulation` tracer collects all events for the passed job and then traces the job execution, essentially like this:
 
