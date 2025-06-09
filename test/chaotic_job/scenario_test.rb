@@ -72,6 +72,15 @@ class ChaoticJob::ScenarioTest < ActiveJob::TestCase
     assert_equal [:performed], ChaoticJob.journal_entries
   end
 
+  test "invalid glitch parameter raises" do
+    assert_raises(ChaoticJob::Error) do
+      ChaoticJob::Scenario.new(
+        TestJob.new,
+        glitch: [:before_call, "#{TestJob.name}#perform"]
+      )
+    end
+  end
+
   test "default parameters and #run with block executes the block but does not perform job" do
     scenario = ChaoticJob::Scenario.new(
       TestJob.new,
