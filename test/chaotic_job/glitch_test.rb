@@ -891,4 +891,40 @@ class ChaoticJob::GlitchTest < ActiveJob::TestCase
     assert_equal [:step_1, :step_2, :glitch], ChaoticJob.journal_entries
     assert glitch.executed?
   end
+
+  test "set_action applies block when none already set" do
+    glitch = ChaoticJob::Glitch.before_call("DoesNotExist#does_not_exist")
+
+    assert_nil glitch.instance_variable_get(:@block)
+
+    glitch.set_action { ChaosJob.log_to_journal!(:glitch) }
+
+    refute_nil glitch.instance_variable_get(:@block)
+  end
+
+  test "set_action leaves block when one already set" do
+    glitch = ChaoticJob::Glitch.before_call("DoesNotExist#does_not_exist") do
+      ChaosJob.log_to_journal!(:glitch)
+    end
+    block = glitch.instance_variable_get(:@block)
+
+    refute_nil block
+
+    glitch.set_action { ChaosJob.log_to_journal!(:overwrite) }
+
+    assert_equal block, glitch.instance_variable_get(:@block)
+  end
+
+  test "set_action leaves block when one already set unless forced" do
+    glitch = ChaoticJob::Glitch.before_call("DoesNotExist#does_not_exist") do
+      ChaosJob.log_to_journal!(:glitch)
+    end
+    block = glitch.instance_variable_get(:@block)
+
+    refute_nil block
+
+    glitch.set_action(force: true) { ChaosJob.log_to_journal!(:overwrite) }
+
+    refute_equal block, glitch.instance_variable_get(:@block)
+  end
 end
