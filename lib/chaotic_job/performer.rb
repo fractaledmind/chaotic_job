@@ -76,8 +76,11 @@ module ChaoticJob
         cutoff.from_now
       in Time
         cutoff
+      else
+        raise Error.new("cutoff must be Time or ActiveSupport::Duration, but got #{cutoff.inspect}")
       end
       delta = (Time.now - time).abs.floor
+
       changeset = case delta
       when 0..59                    # seconds
         {usec: 0}
@@ -85,7 +88,7 @@ module ChaoticJob
         {sec: 0, usec: 0}
       when 3600..86_399             # hours
         {min: 0, sec: 0, usec: 0}
-      when 86_400..Float::INFINITY  # days+
+      else  # days+
         {hour: 0, min: 0, sec: 0, usec: 0}
       end
       time.change(**changeset)

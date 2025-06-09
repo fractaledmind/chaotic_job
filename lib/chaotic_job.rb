@@ -66,10 +66,9 @@ module ChaoticJob
       Performer.perform_all_after(time)
     end
 
-    def run_simulation(job, depth: nil, variations: nil, callstack: nil, &block)
+    def run_simulation(job, variations: nil, callstack: nil, &block)
       seed = defined?(RSpec) ? RSpec.configuration.seed : Minitest.seed
       kwargs = {test: self, seed: seed}
-      kwargs[:depth] = depth if depth
       kwargs[:variations] = variations if variations
       kwargs[:callstack] = callstack if callstack
       self.simulation_scenario = nil

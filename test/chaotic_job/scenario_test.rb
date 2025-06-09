@@ -2,12 +2,6 @@
 
 require "test_helper"
 
-class TestJob < ActiveJob::Base
-  def perform
-    ChaoticJob.log_to_journal!(:performed)
-  end
-end
-
 class ChaoticJob::ScenarioTest < ActiveJob::TestCase
   test "default parameters and blockless #run retries job" do
     scenario = ChaoticJob::Scenario.new(
@@ -70,6 +64,15 @@ class ChaoticJob::ScenarioTest < ActiveJob::TestCase
       scenario.events.map(&:name)
     )
     assert_equal [:performed], ChaoticJob.journal_entries
+  end
+
+  test "invalid glitch parameter raises" do
+    assert_raises(ChaoticJob::Error) do
+      ChaoticJob::Scenario.new(
+        TestJob.new,
+        glitch: [:before_call, "#{TestJob.name}#perform"]
+      )
+    end
   end
 
   test "default parameters and #run with block executes the block but does not perform job" do
