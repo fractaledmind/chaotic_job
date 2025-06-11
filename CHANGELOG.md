@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [0.8.0] - 2025-06-11
+
+- Add methods to allow checking if a Scenario matches a particular Glitch key + event pair [#10](https://github.com/fractaledmind/chaotic_job/pull/10)
+
 ## [0.7.0] - 2025-06-09
 
 - Glitch only works with singular event + key definition [#6](https://github.com/fractaledmind/chaotic_job/pull/6)
