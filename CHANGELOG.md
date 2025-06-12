@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [0.9.1] - 2025-06-12
+
+- The simulation tracer should only capture events on the template job [#14](https://github.com/fractaledmind/chaotic_job/pull/14)
+
 ## [0.9.0] - 2025-06-12
 
 - Make journal logging idempotent and add `push` for non-idempotent logging [#12](https://github.com/fractaledmind/chaotic_job/pull/12)
