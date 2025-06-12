@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [0.8.1] - 2025-06-12
+
+- Add pretty `to_s` methods for Scenario and Glitch [#11](https://github.com/fractaledmind/chaotic_job/pull/11)
+
 ## [0.8.0] - 2025-06-11
 
 - Add methods to allow checking if a Scenario matches a particular Glitch key + event pair [#10](https://github.com/fractaledmind/chaotic_job/pull/10)
