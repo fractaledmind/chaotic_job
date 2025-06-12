@@ -16,7 +16,7 @@ module ChaoticJob
 
     def log(item = 1, scope: :default)
       @logs ||= {}
-      @logs[scope] ||= []
+      @logs[scope] ||= Set.new
       @logs[scope] << item
       item
     end
