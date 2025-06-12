@@ -55,6 +55,25 @@ module ChaoticJob
       @executed
     end
 
+    def to_s
+      # ChaoticJob::Glitch(
+      #   event: String,
+      #   key: String,
+      #   args: [Array],
+      #   kwargs: [Hash],
+      #   retval: [Object]
+      # )
+      buffer = +"ChaoticJob::Glitch(\n"
+      buffer << "  event: #{@event}\n"
+      buffer << "  key: #{@key}\n"
+      buffer << "  args: #{@args}\n" if @args.any?
+      buffer << "  kwargs: #{@kwargs}\n" if @kwargs.any?
+      buffer << "  retval: #{@retval}\n" if @retval
+      buffer << ")"
+
+      buffer
+    end
+
     private
 
     # :nocov: SimpleCov cannot track code executed _within_ a TracePoint

@@ -54,5 +54,28 @@ module ChaoticJob
 
       key == @glitch.key
     end
+
+    def to_s
+      # ChaoticJob::Scenario(
+      #   job: Job(arguments),
+      #   glitch: Glitch()
+      # )
+      buffer = +"ChaoticJob::Scenario(\n"
+
+      job_attributes = @job.serialize
+      buffer << "  job: #{job_attributes["job_class"]}"
+      buffer << "("
+      buffer << job_attributes["arguments"].join(", ")
+      buffer << "),\n"
+
+      glitch_start, *glitch_lines = @glitch.to_s.split("\n")
+      buffer << "  glitch: #{glitch_start}\n"
+      glitch_lines.each do |line|
+        buffer << "  #{line}\n"
+      end
+      buffer << ")"
+
+      buffer
+    end
   end
 end
