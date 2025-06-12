@@ -26,6 +26,18 @@ module ChaoticJob
     end
   end
 
+  def self.push_to_journal!(item = nil, scope: nil)
+    if item && scope
+      Journal.push(item, scope: scope)
+    elsif item
+      Journal.push(item)
+    elsif scope
+      Journal.push(scope: scope)
+    else
+      Journal.push
+    end
+  end
+
   def self.journal_entries(scope: nil)
     if scope
       Journal.entries(scope: scope)
