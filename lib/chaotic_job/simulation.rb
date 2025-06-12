@@ -51,7 +51,11 @@ module ChaoticJob
       job_class = @template.class
       job_file_path = job_class.instance_method(:perform).source_location&.first
       tracer = Tracer.new { |tp| tp.path == job_file_path || tp.defined_class == job_class }
-      callstack = tracer.capture { @template.dup.perform_now }
+      callstack = tracer.capture do
+        @template.dup.enqueue
+        # run the template job as well as any other jobs it may enqueue
+        Performer.perform_all
+      end
 
       @template.class.queue_adapter.enqueued_jobs = []
       callstack
