@@ -82,15 +82,15 @@ class TestChaoticJob < ActiveJob::TestCase
       end
 
       def step_1
-        ChaoticJob.log_to_journal!(:step_1)
+        ChaoticJob.push_to_journal!(:step_1)
       end
 
       def step_2
-        ChaoticJob.log_to_journal!(:step_2)
+        ChaoticJob.push_to_journal!(:step_2)
       end
 
       def step_3
-        ChaoticJob.log_to_journal!(:step_3)
+        ChaoticJob.push_to_journal!(:step_3)
       end
     end
 
@@ -109,7 +109,7 @@ class TestChaoticJob < ActiveJob::TestCase
       end
 
       def step(argument)
-        ChaoticJob.log_to_journal!(argument)
+        ChaoticJob.push_to_journal!(argument)
       end
     end
 
@@ -128,7 +128,7 @@ class TestChaoticJob < ActiveJob::TestCase
       end
 
       def step(keyword:)
-        ChaoticJob.log_to_journal!(keyword)
+        ChaoticJob.push_to_journal!(keyword)
       end
     end
 
@@ -147,7 +147,7 @@ class TestChaoticJob < ActiveJob::TestCase
       end
 
       def step(*positional)
-        ChaoticJob.log_to_journal!(positional)
+        ChaoticJob.push_to_journal!(positional)
       end
     end
 

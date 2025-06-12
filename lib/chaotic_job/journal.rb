@@ -10,14 +10,30 @@ module ChaoticJob
   module Journal
     extend self
 
+    DEFAULT = Object.new.freeze
+
     def reset!
       @logs = {}
     end
 
-    def log(item = 1, scope: :default)
+    def log(item = DEFAULT, scope: :default)
+      @logs ||= {}
+      @logs[scope] ||= Set.new
+      set = @logs[scope].to_set
+      if item != DEFAULT
+        set << item
+      else
+        max = set.to_a.max || 0
+        set << max + 1
+      end
+      item
+    end
+
+    def push(item = true, scope: :default)
       @logs ||= {}
       @logs[scope] ||= []
-      @logs[scope] << item
+      array = @logs[scope].to_a
+      array << item
       item
     end
 
@@ -26,7 +42,7 @@ module ChaoticJob
     end
 
     def entries(scope: :default)
-      @logs[scope]
+      @logs[scope]&.to_a
     end
 
     def top(scope: :default)
