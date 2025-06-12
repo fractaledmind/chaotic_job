@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [0.9.0] - 2025-06-12
+
+- Make journal logging idempotent and add `push` for non-idempotent logging [#12](https://github.com/fractaledmind/chaotic_job/pull/12)
+- A simulation callstack capture needs to perform child jobs as well [#13](https://github.com/fractaledmind/chaotic_job/pull/13)
+
 ## [0.8.1] - 2025-06-12
 
 - Add pretty `to_s` methods for Scenario and Glitch [#11](https://github.com/fractaledmind/chaotic_job/pull/11)

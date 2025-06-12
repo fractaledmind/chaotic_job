@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    chaotic_job (0.8.1)
+    chaotic_job (0.9.0)
 
 GEM
   remote: https://rubygems.org/
