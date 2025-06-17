@@ -3,6 +3,11 @@
 require "test_helper"
 
 class ChaoticJob::SwitchTest < ActiveJob::TestCase
+  def before_setup
+    ChaoticJob::Switch.off!
+    super
+  end
+
   test "on? defaults to false" do
     refute ChaoticJob::Switch.on?
   end
