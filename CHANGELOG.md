@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [0.9.2] - 2025-06-17
+
+- Allow option to constrain which jobs are performed for a `Simulation` [#16](https://github.com/fractaledmind/chaotic_job/pull/16)
+- Make the jobs run for a `Simulation` have a distinct `job_id` with glitch details [#15](https://github.com/fractaledmind/chaotic_job/pull/15)
+
 ## [0.9.1] - 2025-06-12
 
 - The simulation tracer should only capture events on the template job [#14](https://github.com/fractaledmind/chaotic_job/pull/14)
