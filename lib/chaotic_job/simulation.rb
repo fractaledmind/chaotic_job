@@ -41,7 +41,7 @@ module ChaoticJob
       variants.map do |(event, key)|
         job = clone_job_template
         glitch = Glitch.public_send(event, key)
-        job.job_id = [job.job_id.split('-').first, scenario.glitch.event, scenario.glitch.key].join("-")
+        job.job_id = [job.job_id.split('-').first, glitch.event, glitch.key].join("-")
         Scenario.new(job, glitch: glitch)
       end
     end
