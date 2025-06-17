@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [0.10.1] - 2025-06-18
+
+- Add more switch methods [#19](https://github.com/fractaledmind/chaotic_job/pull/19)
+
 ## [0.10.0] - 2025-06-18
 
 - Run the assertions block within the scenario run to ensure the glitch is executed [#17](https://github.com/fractaledmind/chaotic_job/pull/17)
