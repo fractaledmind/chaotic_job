@@ -63,8 +63,20 @@ module ChaoticJob
     end
   end
 
-  def self.switch
-    Switch
+  def self.switch_on?
+    Switch.on?
+  end
+
+  def self.switch_off?
+    Switch.off?
+  end
+
+  def self.switch_on!
+    Switch.on!
+  end
+
+  def self.switch_off!
+    Switch.off!
   end
 
   module Helpers
