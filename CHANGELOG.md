@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [0.10.0] - 2025-06-18
+
+- Run the assertions block within the scenario run to ensure the glitch is executed [#17](https://github.com/fractaledmind/chaotic_job/pull/17)
+- Add a Switch class to allow tests to control a binary switch [#18](https://github.com/fractaledmind/chaotic_job/pull/18)
+
 ## [0.9.2] - 2025-06-17
 
 - Allow option to constrain which jobs are performed for a `Simulation` [#16](https://github.com/fractaledmind/chaotic_job/pull/16)
