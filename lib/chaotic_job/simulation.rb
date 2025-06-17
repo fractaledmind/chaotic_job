@@ -65,14 +65,19 @@ module ChaoticJob
       debug "👾 Running simulation with scenario: #{scenario}"
       @test.before_setup
       @test.simulation_scenario = scenario
+
       if @perform_only_jobs_within
-        scenario.run { Performer.perform_all_before(@perform_only_jobs_within) }
+        scenario.run do
+          Performer.perform_all_before(@perform_only_jobs_within)
+          assertions.call(scenario)
+        end
       else
         scenario.run
+        assertions.call(scenario)
       end
+
       @test.after_teardown
       @test.assert scenario.glitched?, "Scenario did not execute glitch: #{scenario.glitch}"
-      assertions.call(scenario)
     ensure
       @test.simulation_scenario = nil
     end
