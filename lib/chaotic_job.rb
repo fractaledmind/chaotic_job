@@ -7,6 +7,7 @@ require_relative "chaotic_job/tracer"
 require_relative "chaotic_job/glitch"
 require_relative "chaotic_job/scenario"
 require_relative "chaotic_job/simulation"
+require_relative "chaotic_job/switch"
 require "set"
 
 module ChaoticJob
@@ -60,6 +61,10 @@ module ChaoticJob
     else
       Journal.top
     end
+  end
+
+  def self.switch
+    Switch
   end
 
   module Helpers
