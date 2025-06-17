@@ -5,13 +5,14 @@
 # Simulation.new(job).scenarios
 module ChaoticJob
   class Simulation
-    def initialize(job, callstack: nil, variations: nil, test: nil, seed: nil)
+    def initialize(job, callstack: nil, variations: nil, test: nil, seed: nil, perform_only_jobs_within: nil)
       @template = job
       @callstack = callstack || capture_callstack
       @variations = variations
       @test = test
       @seed = seed || Random.new_seed
       @random = Random.new(@seed)
+      @perform_only_jobs_within = perform_only_jobs_within
 
       raise Error.new("callstack must be a generated via ChaoticJob::Tracer") unless @callstack.is_a?(Stack)
     end
@@ -63,7 +64,11 @@ module ChaoticJob
       debug "👾 Running simulation with scenario: #{scenario}"
       @test.before_setup
       @test.simulation_scenario = scenario
-      scenario.run
+      if @perform_only_jobs_within
+        scenario.run { Performer.perform_all_before(@perform_only_jobs_within) }
+      else
+        scenario.run
+      end
       @test.after_teardown
       @test.assert scenario.glitched?, "Scenario did not execute glitch: #{scenario.glitch}"
       assertions.call(scenario)
