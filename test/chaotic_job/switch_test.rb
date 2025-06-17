@@ -35,4 +35,32 @@ class ChaoticJob::SwitchTest < ActiveJob::TestCase
     ChaoticJob::Switch.off!
     assert ChaoticJob::Switch.off?
   end
+
+  test "ChaoticJob.switch_on? defaults to false" do
+    refute ChaoticJob.switch_on?
+  end
+
+  test "ChaoticJob.switch_off? defaults to true" do
+    assert ChaoticJob.switch_off?
+  end
+
+  test "ChaoticJob.switch_on? returns true after on!" do
+    ChaoticJob.switch_on!
+    assert ChaoticJob.switch_on?
+  end
+
+  test "ChaoticJob.switch_on? returns false after off!" do
+    ChaoticJob.switch_off!
+    refute ChaoticJob.switch_on?
+  end
+
+  test "ChaoticJob.switch_off? returns false after on!" do
+    ChaoticJob.switch_on!
+    refute ChaoticJob.switch_off?
+  end
+
+  test "ChaoticJob.switch_off? returns true after off!" do
+    ChaoticJob.switch_off!
+    assert ChaoticJob.switch_off?
+  end
 end
