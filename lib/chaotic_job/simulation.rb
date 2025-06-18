@@ -77,7 +77,6 @@ module ChaoticJob
       serialized_template = @template.serialize
       job = ActiveJob::Base.deserialize(serialized_template)
       job.exception_executions = {}
-      job.job_id = [job.job_id.split("-").first, glitch.event, glitch.key].join("-")
       job
     end
 
