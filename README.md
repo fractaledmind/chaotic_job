@@ -167,10 +167,12 @@ Finally, if you need to inject a glitch right before a particular line of code i
 run_scenario(Job.new, glitch: ChaoticJob::Glitch.before_line("#{__FILE__}:6"))
 ```
 
-Scenario testing is useful to test the behavior of a job under a specific set of conditions. But, if you want to test the behavior of a job under a variety of conditions, you can use the `run_simulation` method. Instead of running a single scenario, a simulation will run the full set of possible error scenarios for your job.
+Scenario testing is useful to test the behavior of a job under a specific set of conditions. But, if you want to test the behavior of a job under a variety of conditions, you can use the `test_simulation` method. Instead of running a single scenario, a simulation will define a full set of possible error scenarios for your job as individual test cases.
 
 ```ruby
-test "simulation of a simple job" do
+class TestYourJob < ActiveJob::TestCase
+  include ChaoticJob::Helpers
+
   class Job < ActiveJob::Base
     def perform
       step_1
@@ -183,7 +185,8 @@ test "simulation of a simple job" do
     def step_3 = ChaoticJob::Journal.log
   end
 
-  run_simulation(Job.new) do |scenario|
+  # will dynamically generate a test method for each failure scenario
+  test_simulation(Job.new) do |scenario|
     assert_operator ChaoticJob::Journal.total, :>=, 3
   end
 end
@@ -206,9 +209,9 @@ More specifically, it will create a scenario injecting a glitch before every lin
   [:return, "Job#perform"]}>
 ```
 
-It generates all possible glitch scenarios by performing your job once with a [`TracePoint`](https://docs.ruby-lang.org/en/master/TracePoint.html) that captures every event executed as a part of your job running. The block that you pass to `run_simulation` will be called for each scenario, allowing you to make assertions about the behavior of your job under all scenarios.
+It generates all possible glitch scenarios by performing your job once with a [`TracePoint`](https://docs.ruby-lang.org/en/master/TracePoint.html) that captures every event executed as a part of your job running. The block that you pass to `test_simulation` will be called for each scenario, allowing you to make assertions about the behavior of your job under all scenarios.
 
-If you want to have the simulation run against a larger collection of scenarios, you can capture a custom callstack using the `ChaoticJob::Tracer` class and pass it to the `run_simulation` method as the `callstack` parameter. A `Tracer` is initialized with a block that determines which `TracePoint` events to collect. You then call `capture` with a block that defines the code to be traced. The default `Simulation` tracer collects all events for the passed job and then traces the job execution, essentially like this:
+If you want to have the simulation run against a larger collection of scenarios, you can capture a custom callstack using the `ChaoticJob::Tracer` class and pass it to the `test_simulation` method as the `callstack` parameter. A `Tracer` is initialized with a block that determines which `TracePoint` events to collect. You then call `capture` with a block that defines the code to be traced. The default `Simulation` tracer collects all events for the passed job and then traces the job execution, essentially like this:
 
 ```ruby
 job_file_path = YourJob.instance_method(:perform).source_location&.first
