@@ -5,6 +5,10 @@ require "test_helper"
 class TestChaoticJob < ActiveJob::TestCase
   include ChaoticJob::Helpers
 
+  test "test_simulation builder method available" do
+    assert_includes self.class.methods, :test_simulation
+  end
+
   test "performing a simple job" do
     class Job1 < ActiveJob::Base
       def perform
@@ -158,33 +162,6 @@ class TestChaoticJob < ActiveJob::TestCase
     assert_equal [[1, {keyword: "1"}], [1, {keyword: "1"}], [2, {keyword: "2"}], [3, {keyword: "3"}]], ChaoticJob.journal_entries
   end
 
-  test "simulation of a simple job" do
-    class Job7 < ActiveJob::Base
-      def perform
-        step_1
-        step_2
-        step_3
-      end
-
-      def step_1
-        ChaoticJob.log_to_journal!
-      end
-
-      def step_2
-        ChaoticJob.log_to_journal!
-      end
-
-      def step_3
-        ChaoticJob.log_to_journal!
-      end
-    end
-
-    assert true
-    run_simulation(Job7.new) do |scenario|
-      assert_operator ChaoticJob.journal_size, :>=, 3
-    end
-  end
-
   test "glitch before line" do
     class Job8 < ActiveJob::Base
       def perform
@@ -201,7 +178,7 @@ class TestChaoticJob < ActiveJob::TestCase
       end
     end
 
-    glitch = glitch_before_line("#{__FILE__}:200") { ChaoticJob.log_to_journal!(:glitch) }
+    glitch = glitch_before_line("#{__FILE__}:177") { ChaoticJob.log_to_journal!(:glitch) }
     glitch.inject! { Job8.perform_now }
 
     assert_equal [:step_1, :glitch, :step_2], ChaoticJob.journal_entries

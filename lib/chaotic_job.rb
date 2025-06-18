@@ -80,7 +80,21 @@ module ChaoticJob
   end
 
   module Helpers
-    attr_accessor :simulation_scenario
+    def self.included(base)
+      base.extend(ClassMethods)
+    end
+
+    module ClassMethods
+      def test_simulation(job, variations: nil, callstack: nil, perform_only_jobs_within: nil, &block)
+        seed = defined?(RSpec) ? RSpec.configuration.seed : Minitest.seed
+        kwargs = {test: self, seed: seed}
+        kwargs[:variations] = variations if variations
+        kwargs[:callstack] = callstack if callstack
+        kwargs[:perform_only_jobs_within] = perform_only_jobs_within if perform_only_jobs_within
+
+        Simulation.new(job, **kwargs).define(&block)
+      end
+    end
 
     def perform_all_jobs
       Performer.perform_all
@@ -93,17 +107,6 @@ module ChaoticJob
 
     def perform_all_jobs_after(time)
       Performer.perform_all_after(time)
-    end
-
-    def run_simulation(job, variations: nil, callstack: nil, perform_only_jobs_within: nil, capture: nil, &block)
-      seed = defined?(RSpec) ? RSpec.configuration.seed : Minitest.seed
-      kwargs = {test: self, seed: seed}
-      kwargs[:variations] = variations if variations
-      kwargs[:callstack] = callstack if callstack
-      kwargs[:perform_only_jobs_within] = perform_only_jobs_within if perform_only_jobs_within
-      kwargs[:capture] = capture if capture
-      self.simulation_scenario = nil
-      Simulation.new(job, **kwargs).run(&block)
     end
 
     def run_scenario(job, glitch:, raise: nil, capture: nil, &block)
@@ -130,21 +133,6 @@ module ChaoticJob
 
     def glitch_before_return(key, return_type = nil, &block)
       Glitch.before_return(key, return_type, &block)
-    end
-
-    def assert(test, msg = nil)
-      return super unless @simulation_scenario
-
-      contextual_msg = lambda do
-        # copied from the original `assert` method in Minitest::Assertions
-        default_msg = "Expected #{mu_pp test} to be truthy."
-        custom_msg = msg.is_a?(Proc) ? msg.call : msg
-        full_msg = custom_msg || default_msg
-        indented_scenario = @simulation_scenario.to_s.split("\n").join("\n  ")
-        "  #{indented_scenario}\n#{full_msg}"
-      end
-
-      super(test, contextual_msg)
     end
   end
 end

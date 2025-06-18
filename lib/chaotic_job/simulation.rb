@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
-# Simulation.new(job).run { |scenario| ... }
-# Simulation.new(job).variants
-# Simulation.new(job).scenarios
+# Simulation.new(job).define { |scenario| ... }
 module ChaoticJob
   class Simulation
     def initialize(job, callstack: nil, variations: nil, test: nil, seed: nil, perform_only_jobs_within: nil, capture: nil)
@@ -15,19 +13,34 @@ module ChaoticJob
       @perform_only_jobs_within = perform_only_jobs_within
       @capture = capture
 
+      @template.class.retry_on RetryableError, attempts: 3, wait: 1, jitter: 0
       raise Error.new("callstack must be a generated via ChaoticJob::Tracer") unless @callstack.is_a?(Stack)
     end
 
-    def run(&assertions)
-      @template.class.retry_on RetryableError, attempts: 3, wait: 1, jitter: 0
+    def define(&assertions)
+      debug "👾 Defining #{@variations || "all"} simulated scenarios of the total #{variants.size} possibilities..."
 
-      debug "👾 Running #{@variations || "all"} simulations of the total #{variants.size} possibilities..."
+      scenarios.each do |scenario|
+        test_method_name = "test_simulation_scenario_before_#{scenario.glitch.event}_#{scenario.glitch.key}"
+        perform_only_jobs_within = @perform_only_jobs_within
 
-      scenarios.map do |scenario|
-        run_scenario(scenario, &assertions)
-        print "·"
+        @test.define_method(test_method_name) do
+          if perform_only_jobs_within
+            scenario.run do
+              Performer.perform_all_before(perform_only_jobs_within)
+              instance_exec(scenario, &assertions)
+            end
+          else
+            scenario.run
+            instance_exec(scenario, &assertions)
+          end
+
+          assert scenario.glitched?, "Scenario did not execute glitch: #{scenario.glitch}"
+        end
       end
     end
+
+    private
 
     def variants
       error_locations = @callstack.map do |event, key|
@@ -48,8 +61,6 @@ module ChaoticJob
       end
     end
 
-    private
-
     def capture_callstack
       tracer = Tracer.new { |tp| tp.defined_class == @template.class }
       callstack = tracer.capture do
@@ -62,31 +73,11 @@ module ChaoticJob
       callstack
     end
 
-    def run_scenario(scenario, &assertions)
-      debug "👾 Running simulation with scenario: #{scenario}"
-      @test.before_setup
-      @test.simulation_scenario = scenario
-
-      if @perform_only_jobs_within
-        scenario.run do
-          Performer.perform_all_before(@perform_only_jobs_within)
-          assertions.call(scenario)
-        end
-      else
-        scenario.run
-        assertions.call(scenario)
-      end
-
-      @test.after_teardown
-      @test.assert scenario.glitched?, "Scenario did not execute glitch: #{scenario.glitch}"
-    ensure
-      @test.simulation_scenario = nil
-    end
-
     def clone_job_template
       serialized_template = @template.serialize
       job = ActiveJob::Base.deserialize(serialized_template)
       job.exception_executions = {}
+      job.job_id = [job.job_id.split("-").first, glitch.event, glitch.key].join("-")
       job
     end
 
