@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [0.11.1] - 2025-06-18
+
+- Fix mistaken `job_id` assignment in `Simulation`
+
 ## [0.11.0] - 2025-06-18
 
 - Allow a Simulation to control the ActiveSupport::Notifications captured, and capture all by default [#20](https://github.com/fractaledmind/chaotic_job/pull/20)
