@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [0.11.2] - 2025-06-18
+
+- Disconnect ActiveRecord connections after defining Simulation scenarios [#22](https://github.com/fractaledmind/chaotic_job/pull/22)
+
 ## [0.11.1] - 2025-06-18
 
 - Fix mistaken `job_id` assignment in `Simulation`
