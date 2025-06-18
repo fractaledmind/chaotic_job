@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [0.11.0] - 2025-06-18
+
+- Allow a Simulation to control the ActiveSupport::Notifications captured, and capture all by default [#20](https://github.com/fractaledmind/chaotic_job/pull/20)
+- Instead of running a simulation within a test case, introduce a builder class method that dynamically defines each scenario as a test case method. [#21](https://github.com/fractaledmind/chaotic_job/pull/21)
+
 ## [0.10.1] - 2025-06-18
 
 - Add more switch methods [#19](https://github.com/fractaledmind/chaotic_job/pull/19)
