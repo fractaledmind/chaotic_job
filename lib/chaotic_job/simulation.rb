@@ -5,7 +5,7 @@
 # Simulation.new(job).scenarios
 module ChaoticJob
   class Simulation
-    def initialize(job, callstack: nil, variations: nil, test: nil, seed: nil, perform_only_jobs_within: nil)
+    def initialize(job, callstack: nil, variations: nil, test: nil, seed: nil, perform_only_jobs_within: nil, capture: nil)
       @template = job
       @callstack = callstack || capture_callstack
       @variations = variations
@@ -13,6 +13,7 @@ module ChaoticJob
       @seed = seed || Random.new_seed
       @random = Random.new(@seed)
       @perform_only_jobs_within = perform_only_jobs_within
+      @capture = capture
 
       raise Error.new("callstack must be a generated via ChaoticJob::Tracer") unless @callstack.is_a?(Stack)
     end
@@ -43,7 +44,7 @@ module ChaoticJob
         job = clone_job_template
         glitch = Glitch.public_send(event, key)
         job.job_id = [job.job_id.split("-").first, glitch.event, glitch.key].join("-")
-        Scenario.new(job, glitch: glitch)
+        Scenario.new(job, glitch: glitch, capture: @capture)
       end
     end
 
