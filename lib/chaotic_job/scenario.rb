@@ -75,6 +75,11 @@ module ChaoticJob
       glitch_lines.each do |line|
         buffer << "  #{line}\n"
       end
+      buffer << "  events: [\n"
+      @events.sort_by { |it| it.started }.each do |it|
+        buffer << "    #{it.started.utc.iso8601(6)}: #{it.name}\n"
+      end
+      buffer << "  ]\n"
       buffer << ")"
 
       buffer
