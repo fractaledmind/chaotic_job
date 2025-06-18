@@ -7,7 +7,7 @@ module ChaoticJob
   class Scenario
     attr_reader :events, :glitch, :job
 
-    def initialize(job, glitch:, raise: RetryableError, capture: /active_job/)
+    def initialize(job, glitch:, raise: RetryableError, capture: nil)
       @job = job
       @glitch = (Glitch === glitch) ? glitch : (raise Error.new("glitch: must be a Glitch instance, but got #{glitch.inspect}"))
       @raise = binding.local_variable_get(:raise)
