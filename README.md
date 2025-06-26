@@ -8,7 +8,7 @@
 [![Twitter Follow](https://img.shields.io/twitter/url?label=%40fractaledmind&style=social&url=https%3A%2F%2Ftwitter.com%2Ffractaledmind)](https://twitter.com/fractaledmind)
 
 > [!TIP]
-> This gem helps you test that your Active Jobs are reliable and resilient to failures. If you want to more easily *build* reliable and resilient Active Jobs, check out the companion [Acidic Job](https://github.com/fractaledmind/acidic_job/tree/alpha-1.0) gem.
+> This gem helps you test that your Active Jobs are reliable and resilient to failures. If you want to more easily *build* reliable and resilient Active Jobs, check out the companion [Acidic Job](https://github.com/fractaledmind/acidic_job) gem.
 
 `ChaoticJob` provides a set of tools to help you test the reliability and resilience of your Active Jobs. It does this by allowing you to simulate various types of failures and glitches that can occur in a production environment, inspired by the principles of [chaos testing](https://principlesofchaos.org) and [deterministic simulation testing](https://blog.resonatehq.io/deterministic-simulation-testing)
 
