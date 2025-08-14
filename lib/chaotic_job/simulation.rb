@@ -32,6 +32,8 @@ module ChaoticJob
       ActiveRecord::Base.connection_pool.disconnect! if defined?(ActiveRecord) && ActiveRecord::Base.connected?
     end
 
+    private
+
     def define_test_for(scenario, &assertions)
       if defined?(RSpec)
         define_rspec_test_for(scenario, &assertions)
@@ -71,8 +73,6 @@ module ChaoticJob
         instance_exec(scenario, &assertions)
       end
     end
-
-    private
 
     def variants
       error_locations = @callstack.map do |event, key|
