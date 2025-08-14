@@ -6,12 +6,14 @@ class ChaoticJob::SimulationTest < ActiveJob::TestCase
   test "initialize with only job initializes callstack and tracing" do
     simulation = ChaoticJob::Simulation.new(TestJob.new)
 
-    assert_equal simulation.callstack.to_a, [
-      [:call, "TestJob#perform"],
-      [:line, "/Users/fractaled/Code/Gems/chaotic_job/test/test_helper.rb:20"],
-      [:line, "/Users/fractaled/Code/Gems/chaotic_job/test/test_helper.rb:22"],
-      [:return, "TestJob#perform"]
-    ]
+    stack = simulation.callstack.to_a
+    assert_equal stack[0], [:call, "TestJob#perform"]
+    assert_equal stack[1][0], :line
+    assert_match %r{chaotic_job\/test\/test_helper.rb:20}, stack[1][1]
+    assert_equal stack[2][0], :line
+    assert_match %r{chaotic_job\/test\/test_helper.rb:22}, stack[2][1]
+    assert_equal stack[3], [:return, "TestJob#perform"]
+
     assert_equal simulation.tracing, [TestJob]
   end
 
@@ -34,12 +36,14 @@ class ChaoticJob::SimulationTest < ActiveJob::TestCase
     tracing = [TestJob, ChaoticJob]
     simulation = ChaoticJob::Simulation.new(TestJob.new, tracing:)
 
-    assert_equal simulation.callstack.to_a, [
-      [:call, "TestJob#perform"],
-      [:line, "/Users/fractaled/Code/Gems/chaotic_job/test/test_helper.rb:20"],
-      [:line, "/Users/fractaled/Code/Gems/chaotic_job/test/test_helper.rb:22"],
-      [:return, "TestJob#perform"]
-    ]
+    stack = simulation.callstack.to_a
+    assert_equal stack[0], [:call, "TestJob#perform"]
+    assert_equal stack[1][0], :line
+    assert_match %r{chaotic_job\/test\/test_helper.rb:20}, stack[1][1]
+    assert_equal stack[2][0], :line
+    assert_match %r{chaotic_job\/test\/test_helper.rb:22}, stack[2][1]
+    assert_equal stack[3], [:return, "TestJob#perform"]
+
     assert_equal simulation.tracing, tracing
   end
 
