@@ -3,8 +3,11 @@
 # Simulation.new(job).define { |scenario| ... }
 module ChaoticJob
   class Simulation
-    def initialize(job, callstack: nil, variations: nil, test: nil, seed: nil, perform_only_jobs_within: nil, capture: nil)
+    attr_reader :callstack, :tracing
+
+    def initialize(job, tracing: nil, callstack: nil, variations: nil, test: nil, seed: nil, perform_only_jobs_within: nil, capture: nil)
       @template = job
+      @tracing = Array(tracing || @template.class)
       @callstack = callstack || capture_callstack
       @variations = variations
       @test = test
@@ -41,7 +44,7 @@ module ChaoticJob
 
       # Since the callstack capture likely touches the database and this code runs during test class definition,
       # we need to disconnect the database connection before possible parallel test forking
-      ActiveRecord::Base.connection_pool.disconnect! if ActiveRecord::Base.connected?
+      ActiveRecord::Base.connection_pool.disconnect! if defined?(ActiveRecord) && ActiveRecord::Base.connected?
     end
 
     private
@@ -66,7 +69,7 @@ module ChaoticJob
     end
 
     def capture_callstack
-      tracer = Tracer.new { |tp| tp.defined_class == @template.class }
+      tracer = Tracer.new { |tp| @tracing.include?(tp.defined_class) }
       callstack = tracer.capture do
         @template.dup.enqueue
         # run the template job as well as any other jobs it may enqueue
