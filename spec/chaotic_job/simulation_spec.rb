@@ -10,9 +10,9 @@ RSpec.describe ChaoticJob::Simulation do
       stack = simulation.callstack.to_a
       expect(stack[0]).to eq([:call, "TestJob#perform"])
       expect(stack[1][0]).to eq(:line)
-      expect(stack[1][1]).to match(%r{chaotic_job/spec/spec_helper.rb:7})
+      expect(stack[1][1]).to match(%r{chaotic_job/spec/spec_helper.rb:23})
       expect(stack[2][0]).to eq(:line)
-      expect(stack[2][1]).to match(%r{chaotic_job/spec/spec_helper.rb:9})
+      expect(stack[2][1]).to match(%r{chaotic_job/spec/spec_helper.rb:25})
       expect(stack[3]).to eq([:return, "TestJob#perform"])
 
       expect(simulation.tracing).to eq([TestJob])
@@ -40,9 +40,9 @@ RSpec.describe ChaoticJob::Simulation do
       stack = simulation.callstack.to_a
       expect(stack[0]).to eq([:call, "TestJob#perform"])
       expect(stack[1][0]).to eq(:line)
-      expect(stack[1][1]).to match(%r{chaotic_job/spec/spec_helper.rb:7})
+      expect(stack[1][1]).to match(%r{chaotic_job/spec/spec_helper.rb:23})
       expect(stack[2][0]).to eq(:line)
-      expect(stack[2][1]).to match(%r{chaotic_job/spec/spec_helper.rb:9})
+      expect(stack[2][1]).to match(%r{chaotic_job/spec/spec_helper.rb:25})
       expect(stack[3]).to eq([:return, "TestJob#perform"])
 
       expect(simulation.tracing).to eq(tracing)

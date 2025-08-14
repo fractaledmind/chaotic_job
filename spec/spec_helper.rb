@@ -1,3 +1,19 @@
+require "simplecov"
+SimpleCov.start do
+  enable_coverage :branch
+  primary_coverage :branch
+  add_filter "/test/"
+  add_filter "/spec/"
+
+  # Merge coverage results from different test suites
+  use_merging true
+  merge_timeout 3600 # 1 hour
+  command_name "RSpec"
+
+  # Track files that aren't loaded by tests
+  track_files "lib/**/*.rb"
+end
+
 require "bundler/setup"
 require "active_job"
 require "chaotic_job"
