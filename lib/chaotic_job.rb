@@ -85,9 +85,10 @@ module ChaoticJob
     end
 
     module ClassMethods
-      def test_simulation(job, variations: nil, callstack: nil, perform_only_jobs_within: nil, &block)
+      def test_simulation(job, tracing: nil, variations: nil, callstack: nil, perform_only_jobs_within: nil, &block)
         seed = defined?(RSpec) ? RSpec.configuration.seed : Minitest.seed
         kwargs = {test: self, seed: seed}
+        kwargs[:tracing] = tracing if tracing
         kwargs[:variations] = variations if variations
         kwargs[:callstack] = callstack if callstack
         kwargs[:perform_only_jobs_within] = perform_only_jobs_within if perform_only_jobs_within
