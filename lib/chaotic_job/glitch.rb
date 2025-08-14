@@ -11,8 +11,8 @@ module ChaoticJob
       new(key, :line, &block)
     end
 
-    def self.before_call(key, ...)
-      new(key, :call, ...)
+    def self.before_call(key, *args, **kwargs, &block)
+      new(key, :call, *args, **kwargs, &block)
     end
 
     def self.before_return(key, return_type = nil, &block)

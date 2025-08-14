@@ -7,15 +7,15 @@ class ChaoticJob::SimulationTest < ActiveJob::TestCase
     job = TestJob.new
     callstack = ChaoticJob::Stack.new
     callstack << [:call, "#{TestJob.name}#perform"]
-    
+
     simulation = ChaoticJob::Simulation.new(job, callstack: callstack)
-    
+
     assert_not_nil simulation
   end
 
   test "initialize raises error with invalid callstack" do
     job = TestJob.new
-    
+
     assert_raises(ChaoticJob::Error) do
       ChaoticJob::Simulation.new(job, callstack: [])
     end
@@ -25,10 +25,10 @@ class ChaoticJob::SimulationTest < ActiveJob::TestCase
     job = TestJob.new
     callstack = ChaoticJob::Stack.new
     callstack << [:call, "#{TestJob.name}#perform"]
-    
+
     simulation = ChaoticJob::Simulation.new(job, callstack: callstack, variations: 1)
     scenarios = simulation.send(:scenarios)
-    
+
     assert_equal 1, scenarios.size
     assert_instance_of ChaoticJob::Scenario, scenarios.first
     assert_equal job.class, scenarios.first.job.class
@@ -38,14 +38,14 @@ class ChaoticJob::SimulationTest < ActiveJob::TestCase
     job = TestJob.new
     callstack = ChaoticJob::Stack.new
     callstack << [:call, "#{TestJob.name}#perform"]
-    
+
     test_class = Class.new
     simulation = ChaoticJob::Simulation.new(job, callstack: callstack, test: test_class, variations: 1)
-    
+
     simulation.define do |scenario|
       # Test block
     end
-    
+
     test_methods = test_class.instance_methods.grep(/^test_simulation_scenario/)
     assert_equal 1, test_methods.size
   end
@@ -55,10 +55,10 @@ class ChaoticJob::SimulationTest < ActiveJob::TestCase
     callstack = ChaoticJob::Stack.new
     callstack << [:call, "#{TestJob.name}#perform"]
     callstack << [:return, "#{TestJob.name}#perform"]
-    
+
     simulation = ChaoticJob::Simulation.new(job, callstack: callstack)
     variants = simulation.send(:variants)
-    
+
     assert_equal 2, variants.size
     assert_includes variants, ["before_call", "#{TestJob.name}#perform"]
     assert_includes variants, ["before_return", "#{TestJob.name}#perform"]
@@ -69,10 +69,10 @@ class ChaoticJob::SimulationTest < ActiveJob::TestCase
     job.job_id = "test-job-123"
     callstack = ChaoticJob::Stack.new
     callstack << [:call, "#{TestJob.name}#perform"]
-    
+
     simulation = ChaoticJob::Simulation.new(job, callstack: callstack)
     cloned_job = simulation.send(:clone_job_template)
-    
+
     assert_equal job.class, cloned_job.class
     refute_equal job.object_id, cloned_job.object_id
     assert_empty cloned_job.exception_executions
