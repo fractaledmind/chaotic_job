@@ -26,7 +26,7 @@ class ChaoticJob::SimulationTest < ActiveJob::TestCase
   test "initialize with callstack" do
     event = [:call, "#{TestJob.name}#perform"]
     callstack = ChaoticJob::Stack.new([event])
-    simulation = ChaoticJob::Simulation.new(TestJob.new, callstack:)
+    simulation = ChaoticJob::Simulation.new(TestJob.new, callstack: callstack)
 
     assert_equal simulation.callstack.to_a, [event]
     assert_equal simulation.tracing, [TestJob]
@@ -34,7 +34,7 @@ class ChaoticJob::SimulationTest < ActiveJob::TestCase
 
   test "initialize with tracing" do
     tracing = [TestJob, ChaoticJob]
-    simulation = ChaoticJob::Simulation.new(TestJob.new, tracing:)
+    simulation = ChaoticJob::Simulation.new(TestJob.new, tracing: tracing)
 
     stack = simulation.callstack.to_a
     assert_equal stack[0], [:call, "TestJob#perform"]

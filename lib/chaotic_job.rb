@@ -128,8 +128,8 @@ module ChaoticJob
       Glitch.before_line(key, &block)
     end
 
-    def glitch_before_call(key, *args, **kwargs, &block)
-      Glitch.before_call(key, *args, **kwargs, &block)
+    def glitch_before_call(key, ...)
+      Glitch.before_call(key, ...)
     end
 
     def glitch_before_return(key, return_type = nil, &block)
