@@ -38,6 +38,13 @@ module ChaoticJob
     end
 
     def define_rspec_test_for(scenario, &assertions)
+      example_name = "test_simulation_scenario_before_#{scenario.glitch.event}_#{scenario.glitch.key}"
+
+      @test.it example_name do
+        run_scenario(scenario, &assertions)
+
+        expect(scenario).to be_glitched, "Scenario did not execute glitch: #{scenario.glitch}"
+      end
     end
 
     def define_minitest_test_for(scenario, &assertions)
