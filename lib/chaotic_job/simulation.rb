@@ -24,22 +24,7 @@ module ChaoticJob
       debug "👾 Defining #{@variations || "all"} simulated scenarios of the total #{variants.size} possibilities..."
 
       scenarios.each do |scenario|
-        test_method_name = "test_simulation_scenario_before_#{scenario.glitch.event}_#{scenario.glitch.key}"
-        perform_only_jobs_within = @perform_only_jobs_within
-
-        @test.define_method(test_method_name) do
-          if perform_only_jobs_within
-            scenario.run do
-              Performer.perform_all_before(perform_only_jobs_within)
-              instance_exec(scenario, &assertions)
-            end
-          else
-            scenario.run
-            instance_exec(scenario, &assertions)
-          end
-
-          assert scenario.glitched?, "Scenario did not execute glitch: #{scenario.glitch}"
-        end
+        define_test_for(scenario, &assertions)
       end
 
       # Since the callstack capture likely touches the database and this code runs during test class definition,
@@ -48,6 +33,46 @@ module ChaoticJob
     end
 
     private
+
+    def define_test_for(scenario, &assertions)
+      if defined?(RSpec)
+        define_rspec_test_for(scenario, &assertions)
+      else
+        define_minitest_test_for(scenario, &assertions)
+      end
+    end
+
+    def define_rspec_test_for(scenario, &assertions)
+      example_name = "test_simulation_scenario_before_#{scenario.glitch.event}_#{scenario.glitch.key}"
+
+      @test.it example_name do
+        run_scenario(scenario, &assertions)
+
+        expect(scenario).to be_glitched, "Scenario did not execute glitch: #{scenario.glitch}"
+      end
+    end
+
+    def define_minitest_test_for(scenario, &assertions)
+      test_method_name = "test_simulation_scenario_before_#{scenario.glitch.event}_#{scenario.glitch.key}"
+
+      @test.define_method(test_method_name) do
+        run_scenario(scenario, &assertions)
+
+        assert scenario.glitched?, "Scenario did not execute glitch: #{scenario.glitch}"
+      end
+    end
+
+    def run_scenario(scenario, &assertions)
+      if @perform_only_jobs_within
+        scenario.run do
+          Performer.perform_all_before(@perform_only_jobs_within)
+          instance_exec(scenario, &assertions)
+        end
+      else
+        scenario.run
+        instance_exec(scenario, &assertions)
+      end
+    end
 
     def variants
       error_locations = @callstack.map do |event, key|

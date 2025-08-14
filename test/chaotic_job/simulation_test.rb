@@ -9,9 +9,9 @@ class ChaoticJob::SimulationTest < ActiveJob::TestCase
     stack = simulation.callstack.to_a
     assert_equal stack[0], [:call, "TestJob#perform"]
     assert_equal stack[1][0], :line
-    assert_match %r{chaotic_job/test/test_helper.rb:21}, stack[1][1]
+    assert_match %r{chaotic_job/test/test_helper.rb:30}, stack[1][1]
     assert_equal stack[2][0], :line
-    assert_match %r{chaotic_job/test/test_helper.rb:23}, stack[2][1]
+    assert_match %r{chaotic_job/test/test_helper.rb:32}, stack[2][1]
     assert_equal stack[3], [:return, "TestJob#perform"]
 
     assert_equal simulation.tracing, [TestJob]
@@ -39,9 +39,9 @@ class ChaoticJob::SimulationTest < ActiveJob::TestCase
     stack = simulation.callstack.to_a
     assert_equal stack[0], [:call, "TestJob#perform"]
     assert_equal stack[1][0], :line
-    assert_match %r{chaotic_job/test/test_helper.rb:21}, stack[1][1]
+    assert_match %r{chaotic_job/test/test_helper.rb:30}, stack[1][1]
     assert_equal stack[2][0], :line
-    assert_match %r{chaotic_job/test/test_helper.rb:23}, stack[2][1]
+    assert_match %r{chaotic_job/test/test_helper.rb:32}, stack[2][1]
     assert_equal stack[3], [:return, "TestJob#perform"]
 
     assert_equal simulation.tracing, tracing

@@ -5,6 +5,15 @@ SimpleCov.start do
   enable_coverage :branch
   primary_coverage :branch
   add_filter "/test/"
+  add_filter "/spec/"
+
+  # Merge coverage results from different test suites
+  use_merging true
+  merge_timeout 3600 # 1 hour
+  command_name "Minitest"
+
+  # Track files that aren't loaded by tests
+  track_files "lib/**/*.rb"
 end
 
 $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
