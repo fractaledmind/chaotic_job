@@ -26,7 +26,7 @@ module ChaoticJob
 
       # Since the callstack capture likely touches the database and this code runs during test class definition,
       # we need to disconnect the database connection before possible parallel test forking
-      ActiveRecord::Base.connection_pool.disconnect! if ActiveRecord::Base.connected?
+      ActiveRecord::Base.connection_pool.disconnect! if defined?(ActiveRecord) && ActiveRecord::Base.connected?
     end
 
     def define_test_for(scenario, &assertions)
