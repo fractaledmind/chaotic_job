@@ -14,6 +14,7 @@ require "minitest/autorun"
 require "active_job"
 
 ActiveJob::Base.logger = Logger.new(ENV["LOG"].present? ? $stdout : IO::NULL)
+$VERBOSE = ENV["LOG"].present? ? true : nil
 
 class TestJob < ActiveJob::Base
   def perform(value = :performed, recursions: nil, wait: nil, total: nil)
