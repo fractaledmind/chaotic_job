@@ -23,4 +23,4 @@ task :test_all do
   puts "\nCombined coverage report generated in coverage/"
 end
 
-task default: %i[test standard]
+task default: %i[test_all standard]
