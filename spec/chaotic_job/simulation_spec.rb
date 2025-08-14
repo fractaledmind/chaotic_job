@@ -58,7 +58,7 @@ RSpec.describe ChaoticJob::Simulation do
       # Create a mock RSpec example group to test the define method
       test_class = Class.new do
         def self.it(name, &block)
-          define_method("test_#{name.gsub(/[^a-zA-Z0-9_]/, '_')}", &block)
+          define_method("test_#{name.gsub(/[^a-zA-Z0-9_]/, "_")}", &block)
         end
       end
 
