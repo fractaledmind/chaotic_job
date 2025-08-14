@@ -40,7 +40,7 @@ class TestYourJob < ActiveJob::TestCase
 end
 ```
 
-The `ChaoticJob::Helpers` module provides 6 methods, 4 of which simply allow you to perform a job with retries in the proper way while the other 2 allow you to simulate failures and glitches.
+The `ChaoticJob::Helpers` module provides 6 methods, 4 of which simply allow you to perform a job with retries in the proper way while the other 2 allow you to simulate failures and glitches. The module works with both Minitest and RSpec.
 
 ### Glitches
 
