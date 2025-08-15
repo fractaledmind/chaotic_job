@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 # Tracer.new(tracing: Job)
+# Tracer.new { |tp| tp.path.start_with? "foo" }
 # tracer.capture { job.perform }
 
 module ChaoticJob
