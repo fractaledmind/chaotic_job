@@ -7,7 +7,7 @@ module ChaoticJob
   class Tracer
     def initialize(tracing: nil, stack: Stack.new, effect: nil, returns: nil, &block)
       @trace = nil
-      @constraint = block_given? ? block : Array(tracing)
+      @constraint = block || Array(tracing)
       @stack = stack
       @effect = effect
       @returns = returns || @stack
@@ -23,13 +23,13 @@ module ChaoticJob
         next unless (Array === constraint) ? constraint.include?(tp.defined_class) : constraint.call(tp)
 
         key = case tp.event
-              when :line then line_key(tp)
-              when :call, :return then call_key(tp)
-              end
+        when :line then line_key(tp)
+        when :call, :return then call_key(tp)
+        end
         event = [tp.defined_class, tp.event, key]
 
         @stack << event
-        @effect.call if @effect
+        @effect&.call
         # :nocov:
       end
 
