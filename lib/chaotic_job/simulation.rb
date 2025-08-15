@@ -94,7 +94,7 @@ module ChaoticJob
     end
 
     def capture_callstack
-      tracer = Tracer.new { |tp| @tracing.include?(tp.defined_class) }
+      tracer = Tracer.new(tracing: @tracing)
       callstack = tracer.capture do
         @template.dup.enqueue
         # run the template job as well as any other jobs it may enqueue
