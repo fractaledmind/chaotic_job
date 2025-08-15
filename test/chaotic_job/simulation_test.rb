@@ -7,12 +7,14 @@ class ChaoticJob::SimulationTest < ActiveJob::TestCase
     simulation = ChaoticJob::Simulation.new(TestJob.new)
 
     stack = simulation.callstack.to_a
-    assert_equal stack[0], [:call, "TestJob#perform"]
-    assert_equal stack[1][0], :line
-    assert_match %r{chaotic_job/test/test_helper.rb:30}, stack[1][1]
-    assert_equal stack[2][0], :line
-    assert_match %r{chaotic_job/test/test_helper.rb:32}, stack[2][1]
-    assert_equal stack[3], [:return, "TestJob#perform"]
+    assert_equal [TestJob, :call, "TestJob#perform"], stack[0]
+    assert_equal TestJob, stack[1][0]
+    assert_equal :line, stack[1][1]
+    assert_match %r{chaotic_job/test/test_helper.rb:30}, stack[1][2]
+    assert_equal TestJob, stack[2][0]
+    assert_equal :line, stack[2][1]
+    assert_match %r{chaotic_job/test/test_helper.rb:32}, stack[2][2]
+    assert_equal [TestJob, :return, "TestJob#perform"], stack[3]
 
     assert_equal simulation.tracing, [TestJob]
   end
@@ -37,12 +39,14 @@ class ChaoticJob::SimulationTest < ActiveJob::TestCase
     simulation = ChaoticJob::Simulation.new(TestJob.new, tracing: tracing)
 
     stack = simulation.callstack.to_a
-    assert_equal stack[0], [:call, "TestJob#perform"]
-    assert_equal stack[1][0], :line
-    assert_match %r{chaotic_job/test/test_helper.rb:30}, stack[1][1]
-    assert_equal stack[2][0], :line
-    assert_match %r{chaotic_job/test/test_helper.rb:32}, stack[2][1]
-    assert_equal stack[3], [:return, "TestJob#perform"]
+    assert_equal [TestJob, :call, "TestJob#perform"], stack[0]
+    assert_equal TestJob, stack[1][0]
+    assert_equal :line, stack[1][1]
+    assert_match %r{chaotic_job/test/test_helper.rb:30}, stack[1][2]
+    assert_equal TestJob, stack[2][0]
+    assert_equal :line, stack[2][1]
+    assert_match %r{chaotic_job/test/test_helper.rb:32}, stack[2][2]
+    assert_equal [TestJob, :return, "TestJob#perform"], stack[3]
 
     assert_equal simulation.tracing, tracing
   end

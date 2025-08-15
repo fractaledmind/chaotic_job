@@ -8,12 +8,14 @@ RSpec.describe ChaoticJob::Simulation do
       simulation = described_class.new(TestJob.new)
 
       stack = simulation.callstack.to_a
-      expect(stack[0]).to eq([:call, "TestJob#perform"])
-      expect(stack[1][0]).to eq(:line)
-      expect(stack[1][1]).to match(%r{chaotic_job/spec/spec_helper.rb:23})
-      expect(stack[2][0]).to eq(:line)
-      expect(stack[2][1]).to match(%r{chaotic_job/spec/spec_helper.rb:25})
-      expect(stack[3]).to eq([:return, "TestJob#perform"])
+      expect(stack[0]).to eq([TestJob, :call, "TestJob#perform"])
+      expect(stack[1][0]).to eq(TestJob)
+      expect(stack[1][1]).to eq(:line)
+      expect(stack[1][2]).to match(%r{chaotic_job/spec/spec_helper.rb:23})
+      expect(stack[2][0]).to eq(TestJob)
+      expect(stack[2][1]).to eq(:line)
+      expect(stack[2][2]).to match(%r{chaotic_job/spec/spec_helper.rb:25})
+      expect(stack[3]).to eq([TestJob, :return, "TestJob#perform"])
 
       expect(simulation.tracing).to eq([TestJob])
     end
@@ -38,12 +40,14 @@ RSpec.describe ChaoticJob::Simulation do
       simulation = described_class.new(TestJob.new, tracing: tracing)
 
       stack = simulation.callstack.to_a
-      expect(stack[0]).to eq([:call, "TestJob#perform"])
-      expect(stack[1][0]).to eq(:line)
-      expect(stack[1][1]).to match(%r{chaotic_job/spec/spec_helper.rb:23})
-      expect(stack[2][0]).to eq(:line)
-      expect(stack[2][1]).to match(%r{chaotic_job/spec/spec_helper.rb:25})
-      expect(stack[3]).to eq([:return, "TestJob#perform"])
+      expect(stack[0]).to eq([TestJob, :call, "TestJob#perform"])
+      expect(stack[1][0]).to eq(TestJob)
+      expect(stack[1][1]).to eq(:line)
+      expect(stack[1][2]).to match(%r{chaotic_job/spec/spec_helper.rb:23})
+      expect(stack[2][0]).to eq(TestJob)
+      expect(stack[2][1]).to eq(:line)
+      expect(stack[2][2]).to match(%r{chaotic_job/spec/spec_helper.rb:25})
+      expect(stack[3]).to eq([TestJob, :return, "TestJob#perform"])
 
       expect(simulation.tracing).to eq(tracing)
     end

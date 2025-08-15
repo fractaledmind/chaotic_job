@@ -26,7 +26,7 @@ class ChaoticJob::TracerTest < ActiveJob::TestCase
     end
 
     assert_equal 3, result.size
-    assert_equal 3, result.count { |event, _| event == :line }
+    assert_equal 3, result.count { |_, event, _| event == :line }
   end
 
   test "capture traces call and return events" do
@@ -39,9 +39,9 @@ class ChaoticJob::TracerTest < ActiveJob::TestCase
     result = tracer.capture { test_method }
 
     assert_equal 4, result.size
-    assert_equal 1, result.count { |event, _| event == :call }
-    assert_equal 1, result.count { |event, _| event == :return }
-    assert_equal 2, result.count { |event, _| event == :line }
+    assert_equal 1, result.count { |_, event, _| event == :call }
+    assert_equal 1, result.count { |_, event, _| event == :return }
+    assert_equal 2, result.count { |_, event, _| event == :line }
   end
 
   test "constraint filters events" do
@@ -54,9 +54,9 @@ class ChaoticJob::TracerTest < ActiveJob::TestCase
     end
 
     assert_equal 2, result.size
-    assert_equal 0, result.count { |event, _| event == :call }
-    assert_equal 0, result.count { |event, _| event == :return }
-    assert_equal 2, result.count { |event, _| event == :line }
+    assert_equal 0, result.count { |_, event, _| event == :call }
+    assert_equal 0, result.count { |_, event, _| event == :return }
+    assert_equal 2, result.count { |_, event, _| event == :line }
   end
 
   test "line key format and stuff" do
@@ -65,10 +65,10 @@ class ChaoticJob::TracerTest < ActiveJob::TestCase
     result = tracer.capture { 42 }
 
     assert_equal 1, result.size
-    assert_equal 0, result.count { |event, _| event == :call }
-    assert_equal 0, result.count { |event, _| event == :return }
-    assert_equal 1, result.count { |event, _| event == :line }
-    assert result.all? { |_, key| key.include?(__FILE__) && key.include?(":") }
+    assert_equal 0, result.count { |_, event, _| event == :call }
+    assert_equal 0, result.count { |_, event, _| event == :return }
+    assert_equal 1, result.count { |_, event, _| event == :line }
+    assert result.all? { |_, _, key| key.include?(__FILE__) && key.include?(":") }
   end
 
   test "call key format for instance methods" do
@@ -81,10 +81,10 @@ class ChaoticJob::TracerTest < ActiveJob::TestCase
     result = tracer.capture { test_instance_method }
 
     assert_equal 4, result.size
-    assert_equal 1, result.count { |event, _| event == :call }
-    assert_equal 1, result.count { |event, _| event == :return }
-    assert_equal 2, result.count { |event, _| event == :line }
-    assert_equal 1, result.count { |event, key| event == :call && key.include?("#test_instance_method") }
+    assert_equal 1, result.count { |_, event, _| event == :call }
+    assert_equal 1, result.count { |_, event, _| event == :return }
+    assert_equal 2, result.count { |_, event, _| event == :line }
+    assert_equal 1, result.count { |_, event, key| event == :call && key.include?("#test_instance_method") }
   end
 
   test "excludes tracer class from tracing" do
@@ -92,7 +92,7 @@ class ChaoticJob::TracerTest < ActiveJob::TestCase
 
     result = tracer.capture { 1 + 1 }
 
-    assert_equal 0, result.count { |_, key| key.to_s.include?("ChaoticJob::Tracer") }
+    assert_equal 0, result.count { |_, _, key| key.to_s.include?("ChaoticJob::Tracer") }
   end
 
   test "empty capture when constraint rejects all" do

@@ -1,34 +1,46 @@
 # frozen_string_literal: true
 
+# Tracer.new(tracing: Job)
 # Tracer.new { |tp| tp.path.start_with? "foo" }
-# Tracer.new.capture { code_execution_to_trace_callstack }
+# tracer.capture { job.perform }
 
 module ChaoticJob
   class Tracer
-    def initialize(&constraint)
-      @constraint = constraint
-      @callstack = Stack.new
+    def initialize(tracing: nil, stack: Stack.new, effect: nil, returns: nil, &block)
+      @trace = nil
+      @constraint = block || Array(tracing)
+      @stack = stack
+      @effect = effect
+      @returns = returns || @stack
     end
 
     def capture(&block)
-      trace = TracePoint.new(:line, :call, :return) do |tp|
+      constraint = @constraint
+      this = self.class
+
+      @trace = TracePoint.new(:line, :call, :return) do |tp|
         # :nocov: SimpleCov cannot track code executed _within_ a TracePoint
-        next if tp.defined_class == self.class
-        next unless @constraint.call(tp)
+        next if tp.defined_class == this
+        next unless (Array === constraint) ? constraint.include?(tp.defined_class) : constraint.call(tp)
 
-        case tp.event
-        when :line
-          key = line_key(tp)
-        when :call, :return
-          key = call_key(tp)
+        key = case tp.event
+        when :line then line_key(tp)
+        when :call, :return then call_key(tp)
         end
+        event = [tp.defined_class, tp.event, key]
 
-        @callstack << [tp.event, key]
+        @stack << event
+        @effect&.call
         # :nocov:
       end
 
-      trace.enable(&block)
-      @callstack
+      @trace.enable(&block)
+
+      @returns
+    end
+
+    def disable
+      @trace.disable
     end
 
     private
