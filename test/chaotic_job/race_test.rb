@@ -2,35 +2,17 @@
 
 require "test_helper"
 
-class Job1 < ActiveJob::Base
-  def perform
-    ChaoticJob.log_to_journal! serialize
-    1 + 2
-  end
-end
-
-class Job2 < ActiveJob::Base
-  def perform
-    ChaoticJob.log_to_journal! serialize
-    step
-  end
-
-  def step
-    1 + 2
-  end
-end
-
 class ChaoticJob::RaceTest < ActiveJob::TestCase
   test "can run a race with an interleaved callstacks pattern" do
     # prep phase
-    job1 = Job1.new
-    job2 = Job2.new
+    job1 = RaceJob1.new
+    job2 = RaceJob2.new
 
-    job1_callstack = ChaoticJob::Tracer.new(tracing: Job1).capture do
+    job1_callstack = ChaoticJob::Tracer.new(tracing: RaceJob1).capture do
       job1.enqueue
       ChaoticJob::Performer.perform_all
     end
-    job2_callstack = ChaoticJob::Tracer.new(tracing: Job2).capture do
+    job2_callstack = ChaoticJob::Tracer.new(tracing: RaceJob2).capture do
       job2.enqueue
       ChaoticJob::Performer.perform_all
     end
