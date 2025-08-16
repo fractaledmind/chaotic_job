@@ -40,6 +40,24 @@ class TestJob < ActiveJob::Base
   end
 end
 
+class RaceJob1 < ActiveJob::Base
+  def perform
+    ChaoticJob.log_to_journal! serialize
+    1 + 2
+  end
+end
+
+class RaceJob2 < ActiveJob::Base
+  def perform
+    ChaoticJob.log_to_journal! serialize
+    step
+  end
+
+  def step
+    1 + 2
+  end
+end
+
 class ActiveSupport::TestCase # rubocop:disable Style/ClassAndModuleChildren
   # Run tests in parallel with specified workers
   parallelize(workers: :number_of_processors)
