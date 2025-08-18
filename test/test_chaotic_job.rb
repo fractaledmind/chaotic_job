@@ -287,9 +287,17 @@ class TestChaoticJob < ActiveJob::TestCase
         step_3
       end
 
-      def step_1; ChaoticJob::Journal.push(1.1); end
-      def step_2; ChaoticJob::Journal.push(1.2); end
-      def step_3; ChaoticJob::Journal.push(1.3); end
+      def step_1
+        ChaoticJob::Journal.push(1.1)
+      end
+
+      def step_2
+        ChaoticJob::Journal.push(1.2)
+      end
+
+      def step_3
+        ChaoticJob::Journal.push(1.3)
+      end
     end
 
     class Job2 < ActiveJob::Base
@@ -299,9 +307,17 @@ class TestChaoticJob < ActiveJob::TestCase
         step_3
       end
 
-      def step_1; ChaoticJob::Journal.push(2.1); end
-      def step_2; ChaoticJob::Journal.push(2.2); end
-      def step_3; ChaoticJob::Journal.push(2.3); end
+      def step_1
+        ChaoticJob::Journal.push(2.1)
+      end
+
+      def step_2
+        ChaoticJob::Journal.push(2.2)
+      end
+
+      def step_3
+        ChaoticJob::Journal.push(2.3)
+      end
     end
 
     job1 = Job1.new
