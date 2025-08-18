@@ -155,5 +155,17 @@ module ChaoticJob
     def glitch_before_return(key, return_type = nil, &block)
       Glitch.before_return(key, return_type, &block)
     end
+
+    def trace(*subjects, &block)
+      ChaoticJob::Tracer.new(tracing: subjects.map(&:class)).capture do
+        ActiveJob.perform_all_later(*subjects)
+
+        if block
+          block.call
+        else
+          Performer.perform_all
+        end
+      end.to_a
+    end
   end
 end
