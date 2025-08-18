@@ -135,6 +135,15 @@ module ChaoticJob
       end
     end
 
+    def run_race(jobs, pattern: nil, capture: nil)
+      kwargs = {}
+
+      kwargs[:pattern] = pattern if pattern
+      kwargs[:capture] = capture if capture
+
+      Race.new(jobs, **kwargs).run
+    end
+
     def glitch_before_line(key, &block)
       Glitch.before_line(key, &block)
     end
