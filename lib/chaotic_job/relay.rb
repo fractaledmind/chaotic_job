@@ -2,8 +2,9 @@
 
 module ChaoticJob
   class Relay
-    def initialize(jobs, variations: nil, test: nil, seed: nil)
+    def initialize(jobs, tracing: nil, variations: nil, test: nil, seed: nil)
       @jobs = jobs
+      @tracing = tracing
       @variations = variations
       @test = test
       @seed = seed || Random.new_seed
@@ -11,18 +12,9 @@ module ChaoticJob
     end
 
     def define(&assertions)
-      callstacks = @jobs.map do |job|
-        tracer = Tracer.new(tracing: job.class)
-        stack = tracer.capture do
-          job.enqueue
-          # run the template job as well as any other jobs it may enqueue
-          Performer.perform_all
-        end
-        stack.to_a
-      end
-      patterns = all_race_patterns(*callstacks)
-      patterns.each do |pattern|
-        race = Race.new(@jobs, pattern)
+      debug "👾 Defining #{@variations || "all"} race conditions of the total #{patterns.size} possibilities..."
+
+      races.each do |race|
         define_test_for(race, &assertions)
       end
     end
@@ -57,6 +49,36 @@ module ChaoticJob
       end
     end
 
+    def races
+      variants.map do |pattern|
+        Race.new(@jobs, pattern)
+      end
+    end
+
+    def variants
+      return patterns if @variations.nil?
+
+      patterns.sample(@variations, random: @random)
+    end
+
+    def patterns
+      callstacks = capture_callstacks
+      all_race_patterns(*callstacks)
+    end
+
+    def capture_callstacks
+      tracing = @tracing
+      @jobs.map do |job|
+        tracer = Tracer.new(tracing: Array(tracing || job.class))
+        stack = tracer.capture do
+          job.enqueue
+          # run the template job as well as any other jobs it may enqueue
+          Performer.perform_all
+        end
+        stack.to_a
+      end
+    end
+
     def run_race(race, &assertions)
       race.run!
       instance_exec(race, &assertions)
@@ -87,6 +109,10 @@ module ChaoticJob
       end
 
       results
+    end
+
+    def debug(...)
+      @jobs.first.logger.debug(...)
     end
   end
 end
