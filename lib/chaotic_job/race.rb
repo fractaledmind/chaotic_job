@@ -1,36 +1,47 @@
 # frozen_string_literal: true
 
+# Race.new(jobs).run { |scenario| ... }
+# Race.new(jobs).success?
+
 module ChaoticJob
   class Race
     EVENT = :event_occurred
 
     attr_reader :executions
 
-    def initialize(jobs, pattern)
+    Event = Struct.new(:name, :started, :finished, :unique_id, :payload)
+
+    def initialize(jobs, pattern, capture: nil)
       @jobs = jobs
       @pattern = pattern
+      @capture = capture
       @executions = []
       @traces = []
       @fibers = {}
+      @events = []
     end
 
-    def run!
+    def run
       @jobs.each { |job| @fibers[job.class] = traced_fiber_for(job) }
       fibers = @fibers
 
-      @pattern.each do |klass, _type, _key|
-        fiber = fibers[klass]
+      ActiveSupport::Notifications.subscribed(->(*args) { @events << Event.new(*args) }, @capture) do
+        @pattern.each do |klass, _type, _key|
+          fiber = fibers[klass]
 
-        break unless fiber.alive?
+          break unless fiber.alive?
 
-        result = fiber.resume
+          result = fiber.resume
 
-        break unless result == EVENT
+          break unless result == EVENT
+        end
       end
 
       # Clean up to prevent FiberError when accessing job methods later
       cleanup_traces
       cleanup_fibers
+
+      self
     end
 
     def success?
