@@ -10,7 +10,7 @@
 > [!TIP]
 > This gem helps you test that your Active Jobs are reliable and resilient to failures. If you want to more easily *build* reliable and resilient Active Jobs, check out the companion [Acidic Job](https://github.com/fractaledmind/acidic_job) gem.
 
-`ChaoticJob` provides a set of tools to help you test the reliability and resilience of your Active Jobs. It does this by allowing you to simulate various types of failures and glitches that can occur in a production environment, inspired by the principles of [chaos testing](https://principlesofchaos.org) and [deterministic simulation testing](https://blog.resonatehq.io/deterministic-simulation-testing)
+`ChaoticJob` provides a set of tools to help you test the reliability and resilience of your Active Jobs. It does this by allowing you to simulate various types of failures, glitches, and races that can occur in a production environment, inspired by the principles of [chaos testing](https://principlesofchaos.org) and [deterministic simulation testing](https://blog.resonatehq.io/deterministic-simulation-testing)
 
 ## Installation
 
@@ -26,6 +26,23 @@ If bundler is not being used to manage dependencies, install the gem by executin
 gem install chaotic_job
 ```
 
+## Concepts
+
+### Glitches
+
+A central concept in `ChaoticJob` is the _glitch_. A glitch is an error injected into the job execution flow via a [`TracePoint`](https://docs.ruby-lang.org/en/master/TracePoint.html). Glitches are transient errors, which means they occur _once_ and **only once**, making them perfect for testing a job's resilience to unpredictable failures that can occur while running jobs, like network issues, upstream API outages, rate limits, or  infrastructure failure. By default, `ChaoticJob` raises a custom error defined by the gem (`ChaoticJob::RetryableError`), which the internals of the gem ensure that the job under test is configured to retry on; you can, however, raise specific errors as needed when setting up your [scenarios](#simulating-failures). By forcing a retry via the error handling mechanisms of Active Job, glitches are a simple but effective way to test that your job is resilient to any kind of transient error that the job is configured to retry on.
+
+### Scenarios
+
+Glitches allows `ChaoticJob` to test specific failure _scenarios_. A scenario is a mutation of a single job's traced callstack defined by where you stop and restart (e.g. [e1, e2, e1, e2, e3]), because a glitch occurs at a certain moment in the callstack. So, a scenario is defined by a particular job and a particular glitch. A simulation computes the set of all possible Scenarios and runs each one, checking them with the passed assertions.
+
+### Races
+
+Another central concept in `ChaoticJob` is the _race_. A race is a mutation of multiple jobs' traced callstacks defined by how you interleave the ordered sets into a single ordered set (e.g. [a1, a2, b1, a3, b2, b3] or [b1, a1, a2, b2, a3, b3]). A race is defined by a particular set of jobs and a particular pattern of linear execution events. The linear sequence pattern must be an exhaustive set of ordered execution events. `ChaoticJob` performs those jobs concurrently, ensuring that the pattern of events is executed in order. This simulates a race condition, which is typically a bug that occurs when two linear sequence of execution events get interleaved in such a way as to produce an unexpected effect. By having an executor that can force multiple concurrent execution streams to follow a fixed pattern, we can test particular race condition scenarios deterministically.
+
+> [!INFO]
+> A [`Scenario`](https://github.com/fractaledmind/chaotic_job/blob/main/lib/chaotic_job/scenario.rb) is to [`Simulation`](https://github.com/fractaledmind/chaotic_job/blob/main/lib/chaotic_job/simulation.rb) as a [`Race`](https://github.com/fractaledmind/chaotic_job/blob/main/lib/chaotic_job/race.rb) is to a [`Relay`](https://github.com/fractaledmind/chaotic_job/blob/main/lib/chaotic_job/relay.rb).
+
 ## Usage
 
 `ChaoticJob` should be used primarily by including its helpers into your Active Job tests:
@@ -40,11 +57,7 @@ class TestYourJob < ActiveJob::TestCase
 end
 ```
 
-The `ChaoticJob::Helpers` module provides 6 methods, 4 of which simply allow you to perform a job with retries in the proper way while the other 2 allow you to simulate failures and glitches. The module works with both Minitest and RSpec.
-
-### Glitches
-
-A central concept in `ChaoticJob` is the _glitch_. A glitch is an error injected into the job execution flow via a [`TracePoint`](https://docs.ruby-lang.org/en/master/TracePoint.html). Glitches are transient errors, which means they occur _once_ and **only once**, making them perfect for testing a job's resilience to unpredictable failures that can occur while running jobs, like network issues, upstream API outages, rate limits, or  infrastructure failure. By default, `ChaoticJob` raises a custom error defined by the gem (`ChaoticJob::RetryableError`), which the internals of the gem ensure that the job under test is configured to retry on; you can, however, raise specific errors as needed when setting up your [scenarios](#simulating-failures). By forcing a retry via the error handling mechanisms of Active Job, glitches are a simple but effective way to test that your job is resilient to any kind of transient error that the job is configured to retry on.
+The `ChaoticJob::Helpers` module provides 7 methods, 3 of which simply allow you to perform a job with retries in the proper way while the other 4 allow you to simulate failures, glitches, and races. The module works with both Minitest and RSpec. Altogether, it provides a suite of tools to allow you to simply and deterministically test the primary surface areas for bugs in the eventually consistent, concurrent environment that is background jobs.
 
 ### Performing Jobs
 
@@ -91,7 +104,7 @@ You can pass either a `Time` object or an `ActiveSupport::Duration` object to th
 
 The helper methods for correctly performing jobs and their retries are useful, but they are not the primary reason for using `ChaoticJob`. The real power of this gem comes from its ability to simulate failures and glitches.
 
-The first helper you can use is the `run_scenario` method. A scenario is simply a set of glitches that will be injected into the specified code once. Here is an example:
+The first helper you can use is the `run_scenario` method. A scenario is simply a particular glitch that will be injected into the specified code once. Here is an example:
 
 ```ruby
 test "scenario of a simple job" do
@@ -107,7 +120,7 @@ test "scenario of a simple job" do
     def step_3; ChaoticJob::Journal.log; end
   end
 
-  run_scenario(Job.new, glitch: ChaoticJob::Glitch.before_call("Job#step_3"))
+  run_scenario(Job.new, glitch: glitch_before_call("Job#step_3"))
 
   assert_equal 5, ChaoticJob::Journal.total
 end
@@ -149,7 +162,7 @@ end
 If we wanted to inject a glitch right before the `step_3` method finishes, we could define the glitch as a `before_return`, like this:
 
 ```ruby
-run_scenario(Job.new, glitch: ChaoticJob::Glitch.before_return("Job#step_3"))
+run_scenario(Job.new, glitch: glitch_before_return("Job#step_3"))
 ```
 
 and it would inject the transient error right here:
@@ -164,7 +177,7 @@ end
 Finally, if you need to inject a glitch right before a particular line of code is executed that is neither a method call nor a method return, you can use the `before_line` key, like this:
 
 ```ruby
-run_scenario(Job.new, glitch: ChaoticJob::Glitch.before_line("#{__FILE__}:6"))
+run_scenario(Job.new, glitch: glitch_before_line("#{__FILE__}:6"))
 ```
 
 Scenario testing is useful to test the behavior of a job under a specific set of conditions. But, if you want to test the behavior of a job under a variety of conditions, you can use the `test_simulation` method. Instead of running a single scenario, a simulation will define a full set of possible error scenarios for your job as individual test cases.
@@ -229,6 +242,58 @@ tracer.capture { YourJob.perform_now }
 If you passed this callstack to your simulation, it would test what happens to your job whenever a transient glitch is injected anywhere in your application code called as a part of executing the job under test.
 
 Remember, in your application tests, you will want to make assertions about the side-effects that your job performs, asserting that they are correctly idempotent (only occur once) and result in the correct state.
+
+### Simulating Race Conditions
+
+In addition to simulating transient failures, `ChaoticJob` can help you simulate and test race conditions that may occur between your jobs.
+
+Much like the `run_scenario` method, you can use the `run_race` method to orchestrate and run a particular race condition. Here is an example:
+
+```ruby
+test "race between two simple jobs" do
+  class Job1 < ActiveJob::Base
+    def perform
+      step_1
+      step_2
+      step_3
+    end
+
+    def step_1; ChaoticJob::Journal.push(1.1); end
+    def step_2; ChaoticJob::Journal.push(1.2); end
+    def step_3; ChaoticJob::Journal.push(1.3); end
+  end
+
+  class Job2 < ActiveJob::Base
+    def perform
+      step_1
+      step_2
+      step_3
+    end
+
+    def step_1; ChaoticJob::Journal.push(2.1); end
+    def step_2; ChaoticJob::Journal.push(2.2); end
+    def step_3; ChaoticJob::Journal.push(2.3); end
+  end
+
+  job1 = Job1.new
+  job2 = Job2.new
+
+  job1_callstack = trace(job1)
+  job2_callstack = trace(job2)
+
+  pattern = job1_callstack.to_a.zip(job2_callstack.to_a).flatten(1)
+
+  ChaoticJob::Journal.reset!
+
+  race = run_race([job1, job2], pattern: pattern)
+
+  assert_equal [1.1, 2.1, 1.2, 2.2, 1.3, 2.3], ChaoticJob.journal_entries
+  assert race.success?
+  assert_equal pattern, race.executions
+end
+```
+
+By zipping together the two job's callstacks, we created an _ordered_ and _exhaustive_ execution pattern that defines a particular race condition. By passing our jobs and that execution pattern to the `run_race` method, we are able to deterministically execute that exact linear sequence of concurrent execution events, thus mimicing a real race condition in production.
 
 ## Development
 
