@@ -20,7 +20,7 @@ class ChaoticJob::RaceTest < ActiveJob::TestCase
     pattern = job1_callstack.to_a.zip(job2_callstack.to_a).flatten(1)
 
     race = ChaoticJob::Race.new([job1, job2], pattern)
-    race.run!
+    race.run
 
     assert race.success?
     assert_equal pattern, race.executions
