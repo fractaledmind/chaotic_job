@@ -96,14 +96,14 @@ class ChaoticJob::ScenarioTest < ActiveJob::TestCase
     assert_nil ChaoticJob.journal_entries
   end
 
-  test "all_glitched? returns false when glitch not executed" do
+  test "success? returns false when glitch not executed" do
     scenario = ChaoticJob::Scenario.new(
       TestJob.new,
       glitch: ChaoticJob::Glitch.before_call("NonExistentClass#nonexistent_method")
     )
     scenario.run
 
-    assert_equal false, scenario.glitched?
+    assert_equal false, scenario.success?
     assert_equal(
       [
         "enqueue.active_job",
@@ -115,14 +115,14 @@ class ChaoticJob::ScenarioTest < ActiveJob::TestCase
     assert_equal [:performed], ChaoticJob.journal_entries
   end
 
-  test "all_glitched? returns true when glitch is executed" do
+  test "success? returns true when glitch is executed" do
     scenario = ChaoticJob::Scenario.new(
       TestJob.new,
       glitch: ChaoticJob::Glitch.before_call("#{TestJob.name}#perform")
     )
     scenario.run
 
-    assert_equal true, scenario.glitched?
+    assert_equal true, scenario.success?
     assert_equal(
       [
         "enqueue.active_job",

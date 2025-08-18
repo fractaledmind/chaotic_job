@@ -58,7 +58,7 @@ module ChaoticJob
       @test.define_method(test_method_name) do
         run_scenario(scenario, &assertions)
 
-        assert scenario.glitched?, "Scenario did not execute glitch: #{scenario.glitch}"
+        assert scenario.success?, "Scenario did not execute glitch: #{scenario.glitch}"
       end
     end
 

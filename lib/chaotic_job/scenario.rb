@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Scenario.new(job).run { |scenario| ... }
-# Scenario.new(job).all_glitched?
+# Scenario.new(job).success?
 
 module ChaoticJob
   class Scenario
@@ -35,7 +35,7 @@ module ChaoticJob
       self
     end
 
-    def glitched?
+    def success?
       @glitch.executed?
     end
 
