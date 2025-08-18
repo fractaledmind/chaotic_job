@@ -11,7 +11,7 @@ module ChaoticJob
 
     Event = Struct.new(:name, :started, :finished, :unique_id, :payload)
 
-    def initialize(jobs, pattern, capture: nil)
+    def initialize(jobs, pattern:, capture: nil)
       @jobs = jobs
       @pattern = pattern
       @capture = capture
