@@ -278,4 +278,46 @@ class TestChaoticJob < ActiveJob::TestCase
     )
     assert_nil ChaoticJob.journal_entries
   end
+
+  test "race between two simple jobs" do
+    class Job1 < ActiveJob::Base
+      def perform
+        step_1
+        step_2
+        step_3
+      end
+
+      def step_1; ChaoticJob::Journal.push(1.1); end
+      def step_2; ChaoticJob::Journal.push(1.2); end
+      def step_3; ChaoticJob::Journal.push(1.3); end
+    end
+
+    class Job2 < ActiveJob::Base
+      def perform
+        step_1
+        step_2
+        step_3
+      end
+
+      def step_1; ChaoticJob::Journal.push(2.1); end
+      def step_2; ChaoticJob::Journal.push(2.2); end
+      def step_3; ChaoticJob::Journal.push(2.3); end
+    end
+
+    job1 = Job1.new
+    job2 = Job2.new
+
+    job1_callstack = trace(job1)
+    job2_callstack = trace(job2)
+
+    pattern = job1_callstack.to_a.zip(job2_callstack.to_a).flatten(1)
+
+    ChaoticJob::Journal.reset!
+
+    race = run_race([job1, job2], pattern: pattern)
+
+    assert_equal [1.1, 2.1, 1.2, 2.2, 1.3, 2.3], ChaoticJob.journal_entries
+    assert race.success?
+    assert_equal pattern, race.executions
+  end
 end
