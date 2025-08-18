@@ -37,6 +37,10 @@ module ChaoticJob
       @executions == @pattern
     end
 
+    def pattern_keys
+      @pattern.map { |_, _, key| key }
+    end
+
     private
 
     def traced_fiber_for(job)
