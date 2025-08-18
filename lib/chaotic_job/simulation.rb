@@ -21,7 +21,7 @@ module ChaoticJob
     end
 
     def define(&assertions)
-      debug "👾 Defining #{@variations || "all"} simulated scenarios of the total #{variants.size} possibilities..."
+      debug "👾 Defining #{@variations || "all"} simulated scenarios of the total #{error_locations.size} possibilities..."
 
       scenarios.each do |scenario|
         define_test_for(scenario, &assertions)
@@ -74,22 +74,24 @@ module ChaoticJob
       end
     end
 
-    def variants
-      error_locations = @callstack.map do |event, key|
-        ["before_#{event}", key]
-      end
-
-      return error_locations if @variations.nil?
-
-      error_locations.sample(@variations, random: @random)
-    end
-
     def scenarios
       variants.map do |(event, key)|
         job = clone_job_template
         glitch = Glitch.public_send(event, key)
         job.job_id = [job.job_id.split("-").first, glitch.event, glitch.key].join("-")
         Scenario.new(job, glitch: glitch, capture: @capture)
+      end
+    end
+
+    def variants
+      return error_locations if @variations.nil?
+
+      error_locations.sample(@variations, random: @random)
+    end
+
+    def error_locations
+      @callstack.map do |event, key|
+        ["before_#{event}", key]
       end
     end
 
