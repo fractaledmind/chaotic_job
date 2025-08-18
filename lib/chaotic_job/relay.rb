@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# Relay.new(jobs).define { |race| assert something }
+
 module ChaoticJob
   class Relay
     def initialize(jobs, tracing: nil, variations: nil, test: nil, seed: nil)
