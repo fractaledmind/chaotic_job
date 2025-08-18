@@ -8,6 +8,8 @@ require_relative "chaotic_job/glitch"
 require_relative "chaotic_job/scenario"
 require_relative "chaotic_job/simulation"
 require_relative "chaotic_job/switch"
+require_relative "chaotic_job/race"
+require_relative "chaotic_job/relay"
 require "set"
 
 module ChaoticJob
