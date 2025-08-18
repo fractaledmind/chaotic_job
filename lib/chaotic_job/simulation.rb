@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
-# Simulation.new(job).define { |scenario| ... }
+# Simulation.new(job).define { |scenario| assert something }
+
 module ChaoticJob
   class Simulation
     attr_reader :callstack, :tracing
