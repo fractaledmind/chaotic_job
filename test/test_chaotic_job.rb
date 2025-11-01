@@ -340,4 +340,37 @@ class TestChaoticJob < ActiveJob::TestCase
     assert race.success?
     assert_equal pattern, race.executions
   end
+
+  class TestRunningRaces < TestChaoticJob
+    class Job1 < ActiveJob::Base
+      def perform
+        step_1
+        step_2
+        step_3
+      end
+
+      def step_1; ChaoticJob::Journal.push(1.1); end
+      def step_2; ChaoticJob::Journal.push(1.2); end
+      def step_3; ChaoticJob::Journal.push(1.3); end
+    end
+
+    class Job2 < ActiveJob::Base
+      def perform
+        step_1
+        step_2
+        step_3
+      end
+
+      def step_1; ChaoticJob::Journal.push(2.1); end
+      def step_2; ChaoticJob::Journal.push(2.2); end
+      def step_3; ChaoticJob::Journal.push(2.3); end
+    end
+
+    # will dynamically generate a test method for each failure scenario
+    test_races(Job1.new, Job2.new) do |scenario|
+      assert_equal 6, ChaoticJob.journal_size
+      assert race.success?
+      assert_equal pattern, race.executions
+    end
+  end
 end
