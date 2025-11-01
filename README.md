@@ -102,6 +102,8 @@ You can pass either a `Time` object or an `ActiveSupport::Duration` object to th
 
 ### Simulating Failures
 
+#### Failure Scenarios
+
 The helper methods for correctly performing jobs and their retries are useful, but they are not the primary reason for using `ChaoticJob`. The real power of this gem comes from its ability to simulate failures and glitches.
 
 The first helper you can use is the `run_scenario` method. A scenario is simply a particular glitch that will be injected into the specified code once. Here is an example:
@@ -180,6 +182,8 @@ Finally, if you need to inject a glitch right before a particular line of code i
 run_scenario(Job.new, glitch: glitch_before_line("#{__FILE__}:6"))
 ```
 
+#### Exhaustive Failure Simulations
+
 Scenario testing is useful to test the behavior of a job under a specific set of conditions. But, if you want to test the behavior of a job under a variety of conditions, you can use the `test_simulation` method. Instead of running a single scenario, a simulation will define a full set of possible error scenarios for your job as individual test cases.
 
 ```ruby
@@ -243,7 +247,9 @@ If you passed this callstack to your simulation, it would test what happens to y
 
 Remember, in your application tests, you will want to make assertions about the side-effects that your job performs, asserting that they are correctly idempotent (only occur once) and result in the correct state.
 
-### Simulating Race Conditions
+### Simulating Races
+
+#### Race Conditions
 
 In addition to simulating transient failures, `ChaoticJob` can help you simulate and test race conditions that may occur between your jobs.
 
@@ -294,6 +300,51 @@ end
 ```
 
 By zipping together the two job's callstacks, we created an _ordered_ and _exhaustive_ execution pattern that defines a particular race condition. By passing our jobs and that execution pattern to the `run_race` method, we are able to deterministically execute that exact linear sequence of concurrent execution events, thus mimicing a real race condition in production.
+
+The `run_race` helper works with any collection of job instances and an _ordered_ and _exhaustive_ execution pattern. As demonstrated in the example above, the best way to produce such a `pattern` is to `trace` the callstack for each job in the collection and then interleave those callstacks in the desired manner. By using the `trace` helper, you can ensure that you produce an ordered and exhaustive callstack that is likewise minimally large (`ChaoticJob` only traces the `call`, `line`, and `return` events from Ruby's `TracePoint`).
+
+As the example also shows, the `ChaoticJob::Race` instance returned from the `run_race` helper provides two public readers for use in assertions. The `#success?` boolean communicates whether the actual execution flow perfectly matched the passed `pattern` (in the example, the two assertions are thus redundant). The `#executions` reader returns the ordered array of actual execution events, allowing you to see how `ChaoticJob` actually executed your concurrent jobs' events.
+
+#### Exhaustive Race Simulations
+
+Just as with failure scenarios, the full power of `ChaoticJob` is unlocked when you use the gem to explore the full space of possible race conditions to ensure you have exhaustively resilient jobs. The `test_races` macro method produces a distinct test for each of the possible race conditions possible for the passed collection of jobs.
+
+```ruby
+class TestYourJob < ActiveJob::TestCase
+  include ChaoticJob::Helpers
+
+  class Job1 < ActiveJob::Base
+    def perform
+      step_1
+      step_2
+      step_3
+    end
+
+    def step_1; ChaoticJob::Journal.push(1.1); end
+    def step_2; ChaoticJob::Journal.push(1.2); end
+    def step_3; ChaoticJob::Journal.push(1.3); end
+  end
+
+  class Job2 < ActiveJob::Base
+    def perform
+      step_1
+      step_2
+      step_3
+    end
+
+    def step_1; ChaoticJob::Journal.push(2.1); end
+    def step_2; ChaoticJob::Journal.push(2.2); end
+    def step_3; ChaoticJob::Journal.push(2.3); end
+  end
+
+  # will dynamically generate a test method for each failure scenario
+  test_races(Job1.new, Job2.new) do |scenario|
+    assert_equal 6, ChaoticJob.journal_size
+    assert race.success?
+    assert_equal pattern, race.executions
+  end
+end
+```
 
 ## Development
 
