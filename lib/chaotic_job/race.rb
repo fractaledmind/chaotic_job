@@ -46,6 +46,38 @@ module ChaoticJob
       @executions == @pattern
     end
 
+    def to_s
+      # ChaoticJob::Race(
+      #   jobs: [
+      #     Job(arguments),
+      #     Job(arguments),
+      #   ],
+      #   pattern: [
+      #     event: key
+      #   ]
+      # )
+      buffer = +"ChaoticJob::Race(\n"
+
+      buffer << "  jobs: [\n"
+      @jobs.each do |job|
+        job_attributes = job.serialize
+        buffer << "    #{job_attributes["job_class"]}"
+        buffer << "("
+        buffer << job_attributes["arguments"].join(", ")
+        buffer << "),\n"
+      end
+      buffer << "  ]\n"
+
+      buffer << "  pattern: [\n"
+      @pattern.each do |_, event, key|
+        buffer << "    #{event}: #{key}\n"
+      end
+      buffer << "  ]\n"
+      buffer << ")"
+
+      buffer
+    end
+
     def pattern_keys
       @pattern.map { |it| "#{it.type}_#{it.key}" }
     end
