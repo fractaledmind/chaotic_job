@@ -9,6 +9,10 @@ class TestChaoticJob < ActiveJob::TestCase
     assert_includes self.class.methods, :test_simulation
   end
 
+  test "test_races builder method available" do
+    assert_includes self.class.methods, :test_races
+  end
+
   test "performing a simple job" do
     class Job1 < ActiveJob::Base
       def perform
