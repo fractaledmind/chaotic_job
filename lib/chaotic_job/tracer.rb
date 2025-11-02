@@ -7,18 +7,34 @@
 module ChaoticJob
   class Tracer
     def initialize(tracing: nil, stack: Stack.new, effect: nil, returns: nil, &block)
-      @trace = nil
       @constraint = block || Array(tracing)
       @stack = stack
       @effect = effect
       @returns = returns || @stack
+      @trace = prepare_trace
     end
 
     def capture(&block)
+      @trace.enable(&block)
+
+      @returns
+    end
+
+    def enable
+      @trace.enable
+    end
+
+    def disable
+      @trace.disable
+    end
+
+    private
+
+    def prepare_trace
       constraint = @constraint
       this = self.class
 
-      @trace = TracePoint.new(:line, :call, :return) do |tp|
+      TracePoint.new(:line, :call, :return) do |tp|
         # :nocov: SimpleCov cannot track code executed _within_ a TracePoint
         next if tp.defined_class == this
         next unless (Array === constraint) ? constraint.include?(tp.defined_class) : constraint.call(tp)
@@ -33,17 +49,7 @@ module ChaoticJob
         @effect&.call
         # :nocov:
       end
-
-      @trace.enable(&block)
-
-      @returns
     end
-
-    def disable
-      @trace.disable
-    end
-
-    private
 
     # :nocov: SimpleCov cannot track code executed _within_ a TracePoint
     def line_key(event)
