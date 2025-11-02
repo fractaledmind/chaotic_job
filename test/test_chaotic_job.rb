@@ -315,14 +315,14 @@ class TestChaoticJob < ActiveJob::TestCase
     job1_callstack = trace(job1)
     job2_callstack = trace(job2)
 
-    pattern = job1_callstack.to_a.zip(job2_callstack.to_a).flatten(1)
+    schedule = job1_callstack.to_a.zip(job2_callstack.to_a).flatten(1)
 
     ChaoticJob::Journal.reset!
 
-    race = run_race([job1, job2], pattern: pattern)
+    race = run_race([job1, job2], schedule: schedule)
 
     assert_equal [1.1, 2.1, 1.2, 2.2, 1.3, 2.3], ChaoticJob.journal_entries
-    assert_equal pattern, race.executions
+    assert_equal schedule, race.executions
     assert race.success?
   end
 end

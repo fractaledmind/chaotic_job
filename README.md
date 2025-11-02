@@ -38,7 +38,7 @@ Glitches allows `ChaoticJob` to test specific failure _scenarios_. A scenario is
 
 ### Races
 
-Another central concept in `ChaoticJob` is the _race_. A race is a mutation of multiple jobs' traced callstacks defined by how you interleave the ordered sets into a single ordered set (e.g. [a1, a2, b1, a3, b2, b3] or [b1, a1, a2, b2, a3, b3]). A race is defined by a particular set of jobs and a particular pattern of linear execution events. The linear sequence pattern must be an exhaustive set of ordered execution events. `ChaoticJob` performs those jobs concurrently, ensuring that the pattern of events is executed in order. This simulates a race condition, which is typically a bug that occurs when two linear sequence of execution events get interleaved in such a way as to produce an unexpected effect. By having an executor that can force multiple concurrent execution streams to follow a fixed pattern, we can test particular race condition scenarios deterministically.
+Another central concept in `ChaoticJob` is the _race_. A race is a mutation of multiple jobs' traced callstacks defined by how you interleave the ordered sets into a single ordered set (e.g. [a1, a2, b1, a3, b2, b3] or [b1, a1, a2, b2, a3, b3]). A race is defined by a particular set of jobs and a particular schedule of linear execution events. The linear sequence schedule must be an exhaustive set of ordered execution events. `ChaoticJob` performs those jobs concurrently, ensuring that the pattern of events is executed in order. This simulates a race condition, which is typically a bug that occurs when two linear sequence of execution events get interleaved in such a way as to produce an unexpected effect. By having an executor that can force multiple concurrent execution streams to follow a fixed pattern, we can test particular race condition scenarios deterministically.
 
 > [!INFO]
 > A [`Scenario`](https://github.com/fractaledmind/chaotic_job/blob/main/lib/chaotic_job/scenario.rb) is to [`Simulation`](https://github.com/fractaledmind/chaotic_job/blob/main/lib/chaotic_job/simulation.rb) as a [`Race`](https://github.com/fractaledmind/chaotic_job/blob/main/lib/chaotic_job/race.rb) is to a [`Relay`](https://github.com/fractaledmind/chaotic_job/blob/main/lib/chaotic_job/relay.rb).
@@ -287,23 +287,23 @@ test "race between two simple jobs" do
   job1_callstack = trace(job1)
   job2_callstack = trace(job2)
 
-  pattern = job1_callstack.to_a.zip(job2_callstack.to_a).flatten(1)
+  schedule = job1_callstack.to_a.zip(job2_callstack.to_a).flatten(1)
 
   ChaoticJob::Journal.reset!
 
-  race = run_race([job1, job2], pattern: pattern)
+  race = run_race([job1, job2], schedule: schedule)
 
   assert_equal [1.1, 2.1, 1.2, 2.2, 1.3, 2.3], ChaoticJob.journal_entries
   assert race.success?
-  assert_equal pattern, race.executions
+  assert_equal schedule, race.executions
 end
 ```
 
-By zipping together the two job's callstacks, we created an _ordered_ and _exhaustive_ execution pattern that defines a particular race condition. By passing our jobs and that execution pattern to the `run_race` method, we are able to deterministically execute that exact linear sequence of concurrent execution events, thus mimicing a real race condition in production.
+By zipping together the two job's callstacks, we created an _ordered_ and _exhaustive_ execution schedule that defines a particular race condition. By passing our jobs and that execution pattern to the `run_race` method, we are able to deterministically execute that exact linear sequence of concurrent execution events, thus mimicing a real race condition in production.
 
-The `run_race` helper works with any collection of job instances and an _ordered_ and _exhaustive_ execution pattern. As demonstrated in the example above, the best way to produce such a `pattern` is to `trace` the callstack for each job in the collection and then interleave those callstacks in the desired manner. By using the `trace` helper, you can ensure that you produce an ordered and exhaustive callstack that is likewise minimally large (`ChaoticJob` only traces the `call`, `line`, and `return` events from Ruby's `TracePoint`).
+The `run_race` helper works with any collection of job instances and an _ordered_ and _exhaustive_ execution schedule. As demonstrated in the example above, the best way to produce such a `schedule` is to `trace` the callstack for each job in the collection and then interleave those callstacks in the desired manner. By using the `trace` helper, you can ensure that you produce an ordered and exhaustive callstack that is likewise minimally large (`ChaoticJob` only traces the `call`, `line`, and `return` events from Ruby's `TracePoint`).
 
-As the example also shows, the `ChaoticJob::Race` instance returned from the `run_race` helper provides two public readers for use in assertions. The `#success?` boolean communicates whether the actual execution flow perfectly matched the passed `pattern` (in the example, the two assertions are thus redundant). The `#executions` reader returns the ordered array of actual execution events, allowing you to see how `ChaoticJob` actually executed your concurrent jobs' events.
+As the example also shows, the `ChaoticJob::Race` instance returned from the `run_race` helper provides two public readers for use in assertions. The `#success?` boolean communicates whether the actual execution flow perfectly matched the passed `schedule` (in the example, the two assertions are thus redundant). The `#executions` reader returns the ordered array of actual execution events, allowing you to see how `ChaoticJob` actually executed your concurrent jobs' events.
 
 #### Exhaustive Race Simulations
 
@@ -341,7 +341,7 @@ class TestYourJob < ActiveJob::TestCase
   test_races(Job1.new, Job2.new) do |scenario|
     assert_equal 6, ChaoticJob.journal_size
     assert race.success?
-    assert_equal pattern, race.executions
+    assert_equal schedule, race.executions
   end
 end
 ```

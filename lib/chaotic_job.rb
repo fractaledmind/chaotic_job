@@ -137,10 +137,10 @@ module ChaoticJob
       end
     end
 
-    def run_race(jobs, pattern: nil, capture: nil)
+    def run_race(jobs, schedule: nil, capture: nil)
       kwargs = {}
 
-      kwargs[:pattern] = pattern if pattern
+      kwargs[:schedule] = schedule if schedule
       kwargs[:capture] = capture if capture
 
       Race.new(jobs, **kwargs).run

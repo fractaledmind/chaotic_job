@@ -19,7 +19,7 @@ module ChaoticJob
 
     def define(&assertions)
       @callstacks = capture_callstacks
-      @possibilities = total_race_patterns(@callstacks.map(&:size))
+      @possibilities = total_race_schedules(@callstacks.map(&:size))
       @sample = @sample.clamp(1, @possibilities)
 
       debug "👾 Defining #{@sample} race conditions of the total #{@possibilities} possibilities..."
@@ -40,24 +40,24 @@ module ChaoticJob
     end
 
     def define_rspec_test_for(race, &assertions)
-      example_name = "test_race_pattern_#{race.pattern_keys.join("_")}"
+      example_name = "test_race_schedule_#{race.schedule_keys.join("_")}"
 
       @test.it example_name do
         race.run
         instance_exec(race, &assertions)
 
-        expect(race).to be_success, "Race did not follow pattern: #{race.pattern}"
+        expect(race).to be_success, "Race did not follow schedule: #{race.schedule}"
       end
     end
 
     def define_minitest_test_for(race, &assertions)
-      test_method_name = "test_race_pattern_#{race.pattern_keys.join("_")}"
+      test_method_name = "test_race_schedule_#{race.schedule_keys.join("_")}"
 
       @test.define_method(test_method_name) do
         race.run
         instance_exec(race, &assertions)
 
-        assert race.success?, "Race did not follow pattern: #{race.pattern}"
+        assert race.success?, "Race did not follow schedule: #{race.schedule}"
       end
     end
 
@@ -70,8 +70,8 @@ module ChaoticJob
         end
       end
 
-      samples.map do |pattern|
-        Race.new(@jobs, pattern: pattern)
+      samples.map do |schedule|
+        Race.new(@jobs, schedule: schedule)
       end
     end
 
@@ -150,7 +150,7 @@ module ChaoticJob
       end
     end
 
-    def total_race_patterns(lengths)
+    def total_race_schedules(lengths)
       total = lengths.sum
       return 1 if total <= 1
 
