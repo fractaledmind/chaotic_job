@@ -7,7 +7,7 @@ class ChaoticJob::RelayTest < ActiveJob::TestCase
     job1 = RaceJob1.new
     job2 = RaceJob2.new
     test_class = Class.new
-    relay = ChaoticJob::Relay.new([job1, job2], test: test_class)
+    relay = ChaoticJob::Relay.new(job1, job2, test: test_class)
 
     test_methods = test_class.instance_methods.grep(/^test_race_pattern/)
     assert_equal 0, test_methods.size
@@ -15,6 +15,6 @@ class ChaoticJob::RelayTest < ActiveJob::TestCase
     relay.define { nil }
 
     test_methods = test_class.instance_methods.grep(/^test_race_pattern/)
-    assert_equal 330, test_methods.size
+    assert_equal relay.sample, test_methods.size
   end
 end

@@ -100,13 +100,13 @@ module ChaoticJob
         Simulation.new(job, **kwargs).define(&block)
       end
 
-      def test_races(jobs)
+      def test_races(*jobs, tracing: nil, sample: nil, &block)
         seed = defined?(RSpec) ? RSpec.configuration.seed : Minitest.seed
         kwargs = {test: self, seed: seed}
         kwargs[:tracing] = tracing if tracing
-        kwargs[:variations] = variations if variations
+        kwargs[:sample] = sample if sample
 
-        Relay.new(jobs, **kwargs).define(&block)
+        Relay.new(*jobs, **kwargs).define(&block)
       end
     end
 
