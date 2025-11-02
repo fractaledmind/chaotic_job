@@ -9,7 +9,6 @@ module ChaoticJob
 
     attr_reader :executions
 
-
     def initialize(jobs, pattern:, capture: nil)
       @jobs = jobs
       @pattern = pattern
