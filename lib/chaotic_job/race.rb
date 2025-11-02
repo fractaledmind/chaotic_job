@@ -9,8 +9,6 @@ module ChaoticJob
 
     attr_reader :executions
 
-    Event = Struct.new(:name, :started, :finished, :unique_id, :payload)
-
     def initialize(jobs, pattern, capture: nil)
       @jobs = jobs
       @pattern = pattern
@@ -25,7 +23,7 @@ module ChaoticJob
       @jobs.each { |job| @fibers[job.class] = traced_fiber_for(job) }
       fibers = @fibers
 
-      ActiveSupport::Notifications.subscribed(->(*args) { @events << Event.new(*args) }, @capture) do
+      ActiveSupport::Notifications.subscribed(->(*args) { @events << ActiveSupportEvent.new(*args) }, @capture) do
         @pattern.each do |klass, _type, _key|
           fiber = fibers[klass]
 

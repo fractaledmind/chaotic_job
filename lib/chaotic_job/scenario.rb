@@ -7,8 +7,6 @@ module ChaoticJob
   class Scenario
     attr_reader :events, :glitch, :job
 
-    Event = Struct.new(:name, :started, :finished, :unique_id, :payload)
-
     def initialize(job, glitch:, raise: RetryableError, capture: nil)
       @job = job
       @glitch = (Glitch === glitch) ? glitch : (raise Error.new("glitch: must be a Glitch instance, but got #{glitch.inspect}"))
@@ -21,7 +19,7 @@ module ChaoticJob
       @job.class.retry_on RetryableError, attempts: 10, wait: 1, jitter: 0
       @glitch.set_action { raise @raise }
 
-      ActiveSupport::Notifications.subscribed(->(*args) { @events << Event.new(*args) }, @capture) do
+      ActiveSupport::Notifications.subscribed(->(*args) { @events << ActiveSupportEvent.new(*args) }, @capture) do
         @glitch.inject! do
           @job.enqueue
           if block
