@@ -16,6 +16,8 @@ module ChaoticJob
   Error = Class.new(StandardError)
   RetryableError = Class.new(Error)
   Stack = Set
+  ActiveSupportEvent = Struct.new(:name, :started, :finished, :unique_id, :payload)
+  TracedEvent = Struct.new(:owner, :type, :key)
 
   def self.log_to_journal!(item = nil, scope: nil)
     if item && scope
