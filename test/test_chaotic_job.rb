@@ -182,7 +182,8 @@ class TestChaoticJob < ActiveJob::TestCase
       end
     end
 
-    glitch = glitch_before_line("#{__FILE__}:177") { ChaoticJob.log_to_journal!(:glitch) }
+    # this is the line that is the body of `step_2`
+    glitch = glitch_before_line("#{__FILE__}:181") { ChaoticJob.log_to_journal!(:glitch) }
     glitch.inject! { Job8.perform_now }
 
     assert_equal [:step_1, :glitch, :step_2], ChaoticJob.journal_entries
