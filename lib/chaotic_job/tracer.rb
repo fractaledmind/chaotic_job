@@ -27,7 +27,7 @@ module ChaoticJob
         when :line then line_key(tp)
         when :call, :return then call_key(tp)
         end
-        event = [tp.defined_class, tp.event, key]
+        event = TracedEvent.new(tp.defined_class, tp.event, key)
 
         @stack << event
         @effect&.call

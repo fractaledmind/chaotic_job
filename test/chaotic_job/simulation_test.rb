@@ -5,16 +5,19 @@ require "test_helper"
 class ChaoticJob::SimulationTest < ActiveJob::TestCase
   test "initialize with only job initializes callstack and tracing" do
     simulation = ChaoticJob::Simulation.new(TestJob.new)
-
     stack = simulation.callstack.to_a
-    assert_equal [TestJob, :call, "TestJob#perform"], stack[0]
-    assert_equal TestJob, stack[1][0]
-    assert_equal :line, stack[1][1]
-    assert_match %r{chaotic_job/test/test_helper.rb:30}, stack[1][2]
-    assert_equal TestJob, stack[2][0]
-    assert_equal :line, stack[2][1]
-    assert_match %r{chaotic_job/test/test_helper.rb:32}, stack[2][2]
-    assert_equal [TestJob, :return, "TestJob#perform"], stack[3]
+
+    assert stack.all? { |item| item.is_a?(ChaoticJob::TracedEvent) }
+    assert stack.all? { |item| item.owner == TestJob }
+
+    assert_equal :call, stack[0].type
+    assert_equal "TestJob#perform", stack[0].key
+    assert_equal :line, stack[1].type
+    assert_match %r{chaotic_job/test/test_helper.rb:30}, stack[1].key
+    assert_equal :line, stack[2].type
+    assert_match %r{chaotic_job/test/test_helper.rb:32}, stack[2].key
+    assert_equal :return, stack[3].type
+    assert_equal "TestJob#perform", stack[3].key
 
     assert_equal simulation.tracing, [TestJob]
   end
@@ -26,7 +29,7 @@ class ChaoticJob::SimulationTest < ActiveJob::TestCase
   end
 
   test "initialize with callstack" do
-    event = [:call, "#{TestJob.name}#perform"]
+    event = ChaoticJob::TracedEvent.new(TestJob, :call, "#{TestJob.name}#perform")
     callstack = ChaoticJob::Stack.new([event])
     simulation = ChaoticJob::Simulation.new(TestJob.new, callstack: callstack)
 
@@ -37,23 +40,26 @@ class ChaoticJob::SimulationTest < ActiveJob::TestCase
   test "initialize with tracing" do
     tracing = [TestJob, ChaoticJob]
     simulation = ChaoticJob::Simulation.new(TestJob.new, tracing: tracing)
-
     stack = simulation.callstack.to_a
-    assert_equal [TestJob, :call, "TestJob#perform"], stack[0]
-    assert_equal TestJob, stack[1][0]
-    assert_equal :line, stack[1][1]
-    assert_match %r{chaotic_job/test/test_helper.rb:30}, stack[1][2]
-    assert_equal TestJob, stack[2][0]
-    assert_equal :line, stack[2][1]
-    assert_match %r{chaotic_job/test/test_helper.rb:32}, stack[2][2]
-    assert_equal [TestJob, :return, "TestJob#perform"], stack[3]
+
+    assert stack.all? { |item| item.is_a?(ChaoticJob::TracedEvent) }
+    assert stack.all? { |item| item.owner == TestJob }
+
+    assert_equal :call, stack[0].type
+    assert_equal "TestJob#perform", stack[0].key
+    assert_equal :line, stack[1].type
+    assert_match %r{chaotic_job/test/test_helper.rb:30}, stack[1].key
+    assert_equal :line, stack[2].type
+    assert_match %r{chaotic_job/test/test_helper.rb:32}, stack[2].key
+    assert_equal :return, stack[3].type
+    assert_equal "TestJob#perform", stack[3].key
 
     assert_equal simulation.tracing, tracing
   end
 
   test "define creates minitest scenario methods" do
     job = TestJob.new
-    event = [:call, "#{TestJob.name}#perform"]
+    event = ChaoticJob::TracedEvent.new(TestJob, :call, "#{TestJob.name}#perform")
     callstack = ChaoticJob::Stack.new([event])
     test_class = Class.new
     simulation = ChaoticJob::Simulation.new(job, callstack: callstack, test: test_class)

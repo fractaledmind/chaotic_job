@@ -24,8 +24,8 @@ module ChaoticJob
       fibers = @fibers
 
       ActiveSupport::Notifications.subscribed(->(*args) { @events << ActiveSupportEvent.new(*args) }, @capture) do
-        @pattern.each do |klass, _type, _key|
-          fiber = fibers[klass]
+        @pattern.each do |event|
+          fiber = fibers[event.owner]
 
           break unless fiber.alive?
 
@@ -47,7 +47,7 @@ module ChaoticJob
     end
 
     def pattern_keys
-      @pattern.map { |_, _, key| key }
+      @pattern.map { |it| "#{it.type}_#{it.key}" }
     end
 
     private

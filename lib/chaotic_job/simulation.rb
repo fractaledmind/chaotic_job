@@ -91,8 +91,8 @@ module ChaoticJob
     end
 
     def error_locations
-      @callstack.map do |event, key|
-        ["before_#{event}", key]
+      @callstack.map do |event|
+        ["before_#{event.type}", event.key]
       end
     end
 
