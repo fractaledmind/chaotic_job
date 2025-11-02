@@ -53,7 +53,7 @@ module ChaoticJob
 
     def races
       variants.map do |pattern|
-        Race.new(@jobs, pattern)
+        Race.new(@jobs, pattern: pattern)
       end
     end
 
