@@ -9,6 +9,10 @@ class TestChaoticJob < ActiveJob::TestCase
     assert_includes self.class.methods, :test_simulation
   end
 
+  test "test_races builder method available" do
+    assert_includes self.class.methods, :test_races
+  end
+
   test "performing a simple job" do
     class Job1 < ActiveJob::Base
       def perform
@@ -178,7 +182,8 @@ class TestChaoticJob < ActiveJob::TestCase
       end
     end
 
-    glitch = glitch_before_line("#{__FILE__}:177") { ChaoticJob.log_to_journal!(:glitch) }
+    # this is the line that is the body of `step_2`
+    glitch = glitch_before_line("#{__FILE__}:181") { ChaoticJob.log_to_journal!(:glitch) }
     glitch.inject! { Job8.perform_now }
 
     assert_equal [:step_1, :glitch, :step_2], ChaoticJob.journal_entries
@@ -277,5 +282,47 @@ class TestChaoticJob < ActiveJob::TestCase
       scenario.events.map(&:name)
     )
     assert_nil ChaoticJob.journal_entries
+  end
+
+  test "race between two simple jobs" do
+    class Job1 < ActiveJob::Base
+      def perform
+        step_1
+        step_2
+        step_3
+      end
+
+      def step_1; ChaoticJob::Journal.push(1.1); end
+      def step_2; ChaoticJob::Journal.push(1.2); end
+      def step_3; ChaoticJob::Journal.push(1.3); end
+    end
+
+    class Job2 < ActiveJob::Base
+      def perform
+        step_1
+        step_2
+        step_3
+      end
+
+      def step_1; ChaoticJob::Journal.push(2.1); end
+      def step_2; ChaoticJob::Journal.push(2.2); end
+      def step_3; ChaoticJob::Journal.push(2.3); end
+    end
+
+    job1 = Job1.new
+    job2 = Job2.new
+
+    job1_callstack = trace(job1)
+    job2_callstack = trace(job2)
+
+    schedule = job1_callstack.to_a.zip(job2_callstack.to_a).flatten(1)
+
+    ChaoticJob::Journal.reset!
+
+    race = run_race([job1, job2], schedule: schedule)
+
+    assert_equal [1.1, 2.1, 1.2, 2.2, 1.3, 2.3], ChaoticJob.journal_entries
+    assert_equal schedule, race.executions
+    assert race.success?
   end
 end

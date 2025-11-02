@@ -9,9 +9,9 @@ module ChaoticJob
 
     attr_reader :executions
 
-    def initialize(jobs, pattern, capture: nil)
+    def initialize(jobs, schedule:, capture: nil)
       @jobs = jobs
-      @pattern = pattern
+      @schedule = schedule
       @capture = capture
       @executions = []
       @traces = []
@@ -24,7 +24,7 @@ module ChaoticJob
       fibers = @fibers
 
       ActiveSupport::Notifications.subscribed(->(*args) { @events << ActiveSupportEvent.new(*args) }, @capture) do
-        @pattern.each do |event|
+        @schedule.each do |event|
           fiber = fibers[event.owner]
 
           break unless fiber.alive?
@@ -43,11 +43,43 @@ module ChaoticJob
     end
 
     def success?
-      @executions == @pattern
+      @executions == @schedule
     end
 
-    def pattern_keys
-      @pattern.map { |it| "#{it.type}_#{it.key}" }
+    def to_s
+      # ChaoticJob::Race(
+      #   jobs: [
+      #     Job(arguments),
+      #     Job(arguments),
+      #   ],
+      #   schedule: [
+      #     event: key
+      #   ]
+      # )
+      buffer = +"ChaoticJob::Race(\n"
+
+      buffer << "  jobs: [\n"
+      @jobs.each do |job|
+        job_attributes = job.serialize
+        buffer << "    #{job_attributes["job_class"]}"
+        buffer << "("
+        buffer << job_attributes["arguments"].join(", ")
+        buffer << "),\n"
+      end
+      buffer << "  ]\n"
+
+      buffer << "  schedule: [\n"
+      @schedule.each do |_, event, key|
+        buffer << "    #{event}: #{key}\n"
+      end
+      buffer << "  ]\n"
+      buffer << ")"
+
+      buffer
+    end
+
+    def schedule_keys
+      @schedule.map { |it| "#{it.type}_#{it.key}" }
     end
 
     private

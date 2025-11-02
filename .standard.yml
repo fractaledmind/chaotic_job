@@ -5,5 +5,7 @@ ruby_version: 3.0
 ignore:
   - 'test/**/*':
     - Lint/ConstantDefinitionInBlock
+    - Style/SingleLineMethods
+    - Layout/EmptyLineBetweenDefs
   - 'lib/**/*':
     - Style/YodaCondition

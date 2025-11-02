@@ -100,13 +100,13 @@ module ChaoticJob
         Simulation.new(job, **kwargs).define(&block)
       end
 
-      def test_races(jobs)
+      def test_races(*jobs, tracing: nil, sample: nil, &block)
         seed = defined?(RSpec) ? RSpec.configuration.seed : Minitest.seed
         kwargs = {test: self, seed: seed}
         kwargs[:tracing] = tracing if tracing
-        kwargs[:variations] = variations if variations
+        kwargs[:sample] = sample if sample
 
-        Relay.new(jobs, **kwargs).define(&block)
+        Relay.new(*jobs, **kwargs).define(&block)
       end
     end
 
@@ -137,6 +137,15 @@ module ChaoticJob
       end
     end
 
+    def run_race(jobs, schedule: nil, capture: nil)
+      kwargs = {}
+
+      kwargs[:schedule] = schedule if schedule
+      kwargs[:capture] = capture if capture
+
+      Race.new(jobs, **kwargs).run
+    end
+
     def glitch_before_line(key, &block)
       Glitch.before_line(key, &block)
     end
@@ -147,6 +156,18 @@ module ChaoticJob
 
     def glitch_before_return(key, return_type = nil, &block)
       Glitch.before_return(key, return_type, &block)
+    end
+
+    def trace(*subjects, &block)
+      ChaoticJob::Tracer.new(tracing: subjects.map(&:class)).capture do
+        ActiveJob.perform_all_later(*subjects)
+
+        if block
+          block.call
+        else
+          Performer.perform_all
+        end
+      end.to_a
     end
   end
 end
