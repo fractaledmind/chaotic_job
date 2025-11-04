@@ -44,27 +44,19 @@ module ChaoticJob
   end
 
   def self.journal_entries(scope: nil)
-    if scope
-      Journal.entries(scope: scope)
-    else
-      Journal.entries
-    end
+    Journal.entries(**{scope: scope}.compact)
   end
 
   def self.journal_size(scope: nil)
-    if scope
-      Journal.size(scope: scope)
-    else
-      Journal.size
-    end
+    Journal.size(**{scope: scope}.compact)
   end
 
   def self.top_journal_entry(scope: nil)
-    if scope
-      Journal.top(scope: scope)
-    else
-      Journal.top
-    end
+    Journal.top(**{scope: scope}.compact)
+  end
+
+  def self.reset_journal(scope: nil)
+    Journal.reset!(**{scope: scope}.compact)
   end
 
   def self.switch_on?
