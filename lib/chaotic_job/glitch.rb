@@ -3,31 +3,37 @@
 # Glitch.before_line("job_crucible.rb:10") { do_anything }
 # Glitch.before_call("Model#method", String, name: "Joel") { do_anything }
 # Glitch.before_return("Model#method", String, name: "Joel") { do_anything }
+# Glitch.before_call("Model#method", nth: 2) { do_anything }
 # Glitch.inject! { execute code to glitch }
 
 module ChaoticJob
   class Glitch
-    def self.before_line(key, &block)
-      new(key, :line, &block)
+    def self.before_line(key, nth: 1, &block)
+      new(key, :line, nth: nth, &block)
     end
 
     def self.before_call(key, ...)
       new(key, :call, ...)
     end
 
-    def self.before_return(key, return_type = nil, &block)
-      new(key, :return, retval: return_type, &block)
+    def self.before_return(key, return_type = nil, nth: 1, &block)
+      new(key, :return, retval: return_type, nth: nth, &block)
     end
 
     attr_reader :key, :event
 
-    def initialize(key, event, *args, retval: nil, **kwargs, &block)
+    # `nth:` targets the nth MATCHING occurrence (1-indexed) — "fail the
+    # second insert" without glitching the first. It is reserved here, so a
+    # keyword-argument matcher literally named `nth` cannot be expressed.
+    def initialize(key, event, *args, retval: nil, nth: 1, **kwargs, &block)
       @event = event
       @key = key
       @args = args
       @retval = retval
+      @nth = nth
       @kwargs = kwargs
       @block = block
+      @matched = 0
       @executed = false
     end
 
@@ -43,6 +49,9 @@ module ChaoticJob
 
         matchers = derive_matchers(tp)
         next unless matches?(matchers)
+
+        @matched += 1
+        next unless @matched == @nth
 
         execute_block
         # :nocov:
@@ -69,6 +78,7 @@ module ChaoticJob
       buffer << "  args: #{@args}\n" if @args.any?
       buffer << "  kwargs: #{@kwargs}\n" if @kwargs.any?
       buffer << "  retval: #{@retval}\n" if @retval
+      buffer << "  nth: #{@nth}\n" if @nth != 1
       buffer << ")"
 
       buffer

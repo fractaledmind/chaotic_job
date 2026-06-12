@@ -915,6 +915,74 @@ class ChaoticJob::GlitchTest < ActiveJob::TestCase
     assert_equal block, glitch.instance_variable_get(:@block)
   end
 
+  test "glitch targets the nth matching call" do
+    class Job13 < ActiveJob::Base
+      def perform
+        3.times { |i| step(i + 1) }
+      end
+
+      def step(n)
+        ChaoticJob.log_to_journal!(:"step_#{n}")
+      end
+    end
+
+    glitch = ChaoticJob::Glitch.before_call("#{Job13.name}#step", nth: 2) do
+      ChaoticJob.log_to_journal!(:glitch)
+    end
+    glitch.inject! { Job13.perform_now }
+
+    assert_equal [:step_1, :glitch, :step_2, :step_3], ChaoticJob.journal_entries
+    assert glitch.executed?
+  end
+
+  test "glitch never executes when fewer matching calls occur than nth" do
+    class Job14 < ActiveJob::Base
+      def perform
+        step
+      end
+
+      def step
+        ChaoticJob.log_to_journal!(:step)
+      end
+    end
+
+    glitch = ChaoticJob::Glitch.before_call("#{Job14.name}#step", nth: 2) do
+      ChaoticJob.log_to_journal!(:glitch)
+    end
+    glitch.inject! { Job14.perform_now }
+
+    assert_equal [:step], ChaoticJob.journal_entries
+    refute glitch.executed?
+  end
+
+  test "glitch targets the nth matching line execution" do
+    class Job15 < ActiveJob::Base
+      @calls = 0
+
+      class << self
+        attr_accessor :calls
+      end
+
+      def perform
+        2.times { step }
+      end
+
+      def step
+        self.class.calls += 1
+        ChaoticJob.log_to_journal!(:"step_#{self.class.calls}")
+      end
+    end
+
+    line = Job15.instance_method(:step).source_location
+    glitch = ChaoticJob::Glitch.before_line("#{line[0]}:#{line[1] + 1}", nth: 2) do
+      ChaoticJob.log_to_journal!(:glitch)
+    end
+    glitch.inject! { Job15.perform_now }
+
+    assert_equal [:step_1, :glitch, :step_2], ChaoticJob.journal_entries
+    assert glitch.executed?
+  end
+
   test "set_action leaves block when one already set unless forced" do
     glitch = ChaoticJob::Glitch.before_call("DoesNotExist#does_not_exist") do
       ChaosJob.log_to_journal!(:glitch)
