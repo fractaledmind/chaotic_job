@@ -4,6 +4,7 @@
 # Glitch.before_call("Model#method", String, name: "Joel") { do_anything }
 # Glitch.before_return("Model#method", String, name: "Joel") { do_anything }
 # Glitch.inject! { execute code to glitch }
+# Glitch.inject!(strict: true) { ... } # raises NeverExecutedError if the glitch never fired
 
 module ChaoticJob
   class Glitch
@@ -35,7 +36,7 @@ module ChaoticJob
       @block = block if @block.nil? || force
     end
 
-    def inject!(&block)
+    def inject!(strict: false, &block)
       trace = TracePoint.new(@event) do |tp|
         # :nocov: SimpleCov cannot track code executed _within_ a TracePoint
         key = derive_key(tp)
@@ -48,7 +49,13 @@ module ChaoticJob
         # :nocov:
       end
 
-      trace.enable(&block)
+      result = trace.enable(&block)
+
+      # Only on the success path: if the block itself raised, that error
+      # propagates untouched — strictness must never mask a real failure.
+      raise NeverExecutedError, "glitch never executed: #{self}" if strict && !executed?
+
+      result
     end
 
     def executed?

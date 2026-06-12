@@ -15,6 +15,10 @@ require "set"
 module ChaoticJob
   Error = Class.new(StandardError)
   RetryableError = Class.new(Error)
+  # A glitch with a typo'd key (or a key the block never reaches) is a
+  # silent no-op — the test passes while injecting nothing. Strict
+  # injection (Glitch#inject!(strict: true)) turns that into this failure.
+  Glitch::NeverExecutedError = Class.new(Error)
   Stack = Set
   ActiveSupportEvent = Struct.new(:name, :started, :finished, :unique_id, :payload)
   TracedEvent = Struct.new(:owner, :type, :key)
