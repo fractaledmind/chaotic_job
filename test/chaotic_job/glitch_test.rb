@@ -915,6 +915,54 @@ class ChaoticJob::GlitchTest < ActiveJob::TestCase
     assert_equal block, glitch.instance_variable_get(:@block)
   end
 
+  test "strict injection raises when the glitch never executes" do
+    class Job16 < ActiveJob::Base
+      def perform
+        step
+      end
+
+      def step
+        ChaoticJob.log_to_journal!(:step)
+      end
+    end
+
+    # a typo'd key is otherwise a silent no-op
+    glitch = ChaoticJob::Glitch.before_call("#{Job16.name}#setp") do
+      ChaoticJob.log_to_journal!(:glitch)
+    end
+
+    error = assert_raises(ChaoticJob::Glitch::NeverExecutedError) do
+      glitch.inject!(strict: true) { Job16.perform_now }
+    end
+
+    assert_match(/setp/, error.message)
+    assert_equal [:step], ChaoticJob.journal_entries
+
+    # a glitch that fires passes strict injection
+    fired = ChaoticJob::Glitch.before_call("#{Job16.name}#step") do
+      ChaoticJob.log_to_journal!(:glitch)
+    end
+    fired.inject!(strict: true) { Job16.perform_now }
+
+    assert fired.executed?
+  end
+
+  test "strict injection never masks an error raised by the block itself" do
+    class Job17 < ActiveJob::Base
+      def perform
+        raise "the real failure"
+      end
+    end
+
+    glitch = ChaoticJob::Glitch.before_call("#{Job17.name}#nope") {}
+
+    error = assert_raises(RuntimeError) do
+      glitch.inject!(strict: true) { Job17.new.perform }
+    end
+
+    assert_equal "the real failure", error.message
+  end
+
   test "set_action leaves block when one already set unless forced" do
     glitch = ChaoticJob::Glitch.before_call("DoesNotExist#does_not_exist") do
       ChaosJob.log_to_journal!(:glitch)
