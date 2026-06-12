@@ -346,6 +346,68 @@ class TestYourJob < ActiveJob::TestCase
 end
 ```
 
+### Glitching Beyond Jobs
+
+Although `ChaoticJob` is built for testing Active Jobs, the `Glitch` primitive is a general-purpose deterministic fault injector: it can target **any** Ruby method or line, in services, models, or library code — no test seams or dependency injection required. Used directly, it reaches the places your boundary stubs cannot: the interior points *between* boundaries, after an HTTP call succeeded but before the database write committed.
+
+```ruby
+glitch = ChaoticJob::Glitch.before_call("PaymentService#record_completion!") do
+  raise ActiveRecord::ConnectionNotEstablished, "simulated database blip"
+end
+
+glitch.inject! do
+  assert_raises(ActiveRecord::ConnectionNotEstablished) { PaymentService.call(payment) }
+end
+
+assert glitch.executed?
+```
+
+> [!TIP]
+> Always assert `glitch.executed?` (or pass a literal error class and assert it raised) — a glitch with a typo'd key, or a key the exercised code path never reaches, is otherwise a silent no-op that certifies resilience it never tested.
+
+### A Fault Grammar for Chaos Suites
+
+A pattern that emerges in mature chaos suites is a small, explicit *grammar* of fault types, each exercising a different layer of your error handling:
+
+**Transient infrastructure faults** — raise a `StandardError` subclass your code rescues and retries. This exercises rescue ladders, retry taxonomies, and idempotency:
+
+```ruby
+ChaoticJob::Glitch.before_call("Transfer#save!") do
+  raise ActiveRecord::ConnectionNotEstablished, "connection refused (simulated)"
+end
+```
+
+**Worker death** — raise an `Exception` subclass (deliberately *not* `StandardError`) so **no rescue block runs**, simulating `kill -9` or an OOM: the work dies mid-flight and your queue adapter redelivers. What state does the half-finished execution leave behind, and does the retry handle it?
+
+```ruby
+WorkerKilled = Class.new(Exception)
+
+glitch = ChaoticJob::Glitch.before_call("Payment::Finalize#record!") { raise WorkerKilled }
+glitch.inject! do
+  assert_raises(WorkerKilled) { job.perform_now }
+end
+# now assert the half-finished state, then redeliver and assert recovery
+```
+
+**Rival interleavings** — the glitch block doesn't have to raise at all. It can perform a *write*, simulating a concurrent worker slipping in between your code's check and its act:
+
+```ruby
+# another worker completes the payment between this worker's claim and its write
+ChaoticJob::Glitch.before_call("Payment#complete!") do
+  payment.events.create!(kind: "completed", actor: "rival-worker")
+end
+```
+
+**Composed faults** — a glitch can *arm* another fault layer at a precise moment, like a query-matched database fault that activates exactly when the method you care about begins:
+
+```ruby
+ChaoticJob::Glitch.before_call("Payment::Finalize#record!") do
+  arm_database_fault(on: /INSERT INTO "payment_events"/)
+end
+```
+
+Together these cover the failure modes that one-shot retryable glitches alone cannot: rescue-ladder bugs, redelivery semantics, check-then-act races, and lost writes.
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
