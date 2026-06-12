@@ -130,7 +130,14 @@ module ChaoticJob
         "#{trace.path}:#{trace.lineno}"
       when :call, :return
         if Module === trace.self
-          "#{trace.self}.#{trace.method_id}"
+          # Module#name via bind_call, never interpolation: interpolating
+          # trace.self invokes overridable to_s/inspect machinery on EVERY
+          # traced call — which explodes when, e.g., an ActiveRecord model is
+          # first autoloaded inside an active glitch (AR's inspect resolves
+          # table_name through a class still running its inherited hooks).
+          # Anonymous modules derive a nil-name key, which simply never
+          # matches — same outcome as their unmatchable #<Class:0x...> form.
+          "#{Module.instance_method(:name).bind_call(trace.self)}.#{trace.method_id}"
         else
           "#{trace.defined_class}##{trace.method_id}"
         end
