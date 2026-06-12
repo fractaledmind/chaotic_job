@@ -915,6 +915,45 @@ class ChaoticJob::GlitchTest < ActiveJob::TestCase
     assert_equal block, glitch.instance_variable_get(:@block)
   end
 
+  test "deriving keys never invokes overridable methods on traced objects" do
+    # Interpolating trace.self calls to_s/inspect on every traced class-level
+    # call. Classes can override those with methods that are unsafe mid-trace
+    # (ActiveRecord's inspect resolves table_name, which explodes while a
+    # model class is still running its inherited hooks during autoload).
+    class LoudClass
+      @calls = 0
+
+      def self.to_s
+        raise "to_s invoked during trace"
+      end
+
+      def self.inspect
+        raise "inspect invoked during trace"
+      end
+
+      def self.step
+        @calls += 1
+        ChaoticJob.log_to_journal!(:"step_#{@calls}")
+      end
+    end
+
+    # an UNRELATED glitch is active while the loud class's singleton method
+    # is traced — deriving its key must not touch to_s/inspect
+    bystander = ChaoticJob::Glitch.before_call("DoesNotExist#does_not_exist") {}
+    bystander.inject! { LoudClass.step }
+
+    assert_equal [:step_1], ChaoticJob.journal_entries
+
+    # and the class is still matchable by its REAL name despite the overrides
+    glitch = ChaoticJob::Glitch.before_call("#{self.class.name}::LoudClass.step") do
+      ChaoticJob.log_to_journal!(:glitch)
+    end
+    glitch.inject! { LoudClass.step }
+
+    assert_equal [:step_1, :glitch, :step_2], ChaoticJob.journal_entries
+    assert glitch.executed?
+  end
+
   test "set_action leaves block when one already set unless forced" do
     glitch = ChaoticJob::Glitch.before_call("DoesNotExist#does_not_exist") do
       ChaosJob.log_to_journal!(:glitch)
