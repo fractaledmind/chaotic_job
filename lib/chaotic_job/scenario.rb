@@ -1,31 +1,37 @@
 # frozen_string_literal: true
 
-# Scenario.new(job).run { |scenario| ... }
-# Scenario.new(job).success?
+# Scenario.new(job_or_workload, glitch:).run { |scenario| ... }
+# Scenario.new(job_or_workload, glitch:).success?
 
 module ChaoticJob
   class Scenario
-    attr_reader :events, :glitch, :job
+    attr_reader :events, :glitch, :workload
 
-    def initialize(job, glitch:, raise: RetryableError, capture: nil)
-      @job = job
+    def initialize(subject, glitch:, raise: RetryableError, capture: nil)
+      @workload = Workload.coerce(subject)
       @glitch = (Glitch === glitch) ? glitch : (raise Error.new("glitch: must be a Glitch instance, but got #{glitch.inspect}"))
       @raise = binding.local_variable_get(:raise)
       @capture = capture
       @events = []
     end
 
+    # Backwards compatibility: callers reading `scenario.job` from the days
+    # when Scenario only wrapped Active Jobs continue to work; non-job
+    # workloads return nil here and use `#workload` instead.
+    def job
+      @workload.respond_to?(:job) ? @workload.job : nil
+    end
+
     def run(&block)
-      @job.class.retry_on RetryableError, attempts: 10, wait: 1, jitter: 0
       @glitch.set_action { raise @raise }
 
       ActiveSupport::Notifications.subscribed(->(*args) { @events << ActiveSupportEvent.new(*args) }, @capture) do
         @glitch.inject! do
-          @job.enqueue
+          @workload.setup!
           if block
             block.call
           else
-            Performer.perform_all
+            @workload.drain!
           end
         end
       end
@@ -57,16 +63,12 @@ module ChaoticJob
 
     def to_s
       # ChaoticJob::Scenario(
-      #   job: Job(arguments),
+      #   job: Job(arguments),   <-- or block: ..., depending on workload
       #   glitch: Glitch()
       # )
       buffer = +"ChaoticJob::Scenario(\n"
 
-      job_attributes = @job.serialize
-      buffer << "  job: #{job_attributes["job_class"]}"
-      buffer << "("
-      buffer << job_attributes["arguments"].join(", ")
-      buffer << "),\n"
+      @workload.describe(buffer)
 
       glitch_start, *glitch_lines = @glitch.to_s.split("\n")
       buffer << "  glitch: #{glitch_start}\n"
