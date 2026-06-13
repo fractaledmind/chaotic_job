@@ -346,6 +346,50 @@ class TestYourJob < ActiveJob::TestCase
 end
 ```
 
+## Workloads: glitching beyond Active Job
+
+`Scenario` and `Simulation` drive any **`Workload`** — `Active Job` is the canonical example, but arbitrary callables work too. The shipping implementations:
+
+| | `JobWorkload` | `BlockWorkload` |
+|---|---|---|
+| Constructor | `JobWorkload.new(active_job)` | `BlockWorkload.new(tracing: [Klass, ...], label: "...") { ... }` |
+| `setup!` | `retry_on RetryableError`, then `enqueue` | no-op |
+| `drain!` | `Performer.perform_all` | `block.call` |
+| Default tracing | `[job.class]` | what you passed in |
+| `clone_for_variant` | serialize / deserialize / clear retry state | returns `self` (block is stateless from our side) |
+
+The Active-Job constructors (`Scenario.new(job, ...)`, `Simulation.new(job, ...)`) are unchanged — they now auto-wrap in `JobWorkload`. The same shapes accept a `Workload` directly:
+
+```ruby
+workload = ChaoticJob::BlockWorkload.new(tracing: [PaymentService]) do
+  PaymentService.call(payment)
+end
+
+scenario = ChaoticJob::Scenario.new(workload, glitch:, raise: ActiveRecord::ConnectionNotEstablished)
+scenario.run do
+  # the glitch raised inside PaymentService.call — assert recovery here
+  Payment::Recover.call(payment)
+  assert payment.reload.settled?
+end
+assert scenario.success? # the glitch fired
+```
+
+`Simulation` over a block does the same trick exhaustively — one scenario per traced call/return/line:
+
+```ruby
+class PaymentChaosTest < Minitest::Test
+  include ChaoticJob::Helpers
+
+  test_simulation(ChaoticJob::BlockWorkload.new(tracing: [PaymentService]) { PaymentService.call(payment_fixture) }) do |scenario|
+    Payment::Recover.call(payment_fixture)
+    assert payment_fixture.reload.settled?
+  end
+end
+```
+
+> [!NOTE]
+> Race and Relay are still Active-Job-shaped pending a follow-up — the Fiber-based callstack machinery is a separate refactor.
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
