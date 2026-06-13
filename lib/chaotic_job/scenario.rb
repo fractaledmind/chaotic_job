@@ -34,12 +34,6 @@ module ChaoticJob
             @workload.drain!
           end
         end
-      rescue *Array(@raise)
-        # The glitch's configured error is the EXPECTED chaos outcome;
-        # post-glitch assertions need to run on the aftermath. Active Job
-        # workloads swallow this via retry_on before it escapes
-        # @glitch.inject! — block workloads have no equivalent, so the
-        # rescue is needed for the simulation cycle to complete uniformly.
       end
 
       self
