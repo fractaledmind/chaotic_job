@@ -34,6 +34,18 @@ module ChaoticJob
       @block.call
     end
 
+    # Race executes the block directly inside its fiber. Same as drain!
+    # because there is no queue layer to skip.
+    def call
+      @block.call
+    end
+
+    # Label as owner — distinct labels keep multiple block workloads
+    # tracing the same module disambiguated in the schedule.
+    def tracer_owner
+      @label
+    end
+
     attr_reader :tracing
 
     # The block is stateless from our side; returning self keeps closures

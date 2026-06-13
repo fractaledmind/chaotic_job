@@ -6,8 +6,8 @@ module ChaoticJob
   class Relay
     attr_reader :sample
 
-    def initialize(*jobs, tracing: nil, sample: 10, test: nil, seed: nil)
-      @jobs = jobs
+    def initialize(*racers, tracing: nil, sample: 10, test: nil, seed: nil)
+      @workloads = racers.map { |r| Workload.coerce(r) }
       @tracing = tracing
       @callstacks = nil
       @possibilities = nil
@@ -71,7 +71,7 @@ module ChaoticJob
       end
 
       samples.map do |schedule|
-        Race.new(@jobs, schedule: schedule)
+        Race.new(@workloads, schedule: schedule)
       end
     end
 
@@ -138,14 +138,17 @@ module ChaoticJob
     end
 
     def capture_callstacks
-      tracing = @tracing
-      @jobs.map do |job|
-        tracer = Tracer.new(tracing: Array(tracing || job.class))
-        stack = tracer.capture do
-          job.enqueue
-          # run the template job as well as any other jobs it may enqueue
-          Performer.perform_all
-        end
+      tracing_override = @tracing
+      @workloads.map do |workload|
+        # Each racer's events are tagged with that workload's owner — Race
+        # routes by it. For backwards compat with class-keyed schedules,
+        # the default owner for JobWorkload is the job class; BlockWorkload
+        # uses its label.
+        tracer = Tracer.new(
+          tracing: Array(tracing_override || workload.tracing),
+          owner: workload.tracer_owner
+        )
+        stack = tracer.capture { workload.call }
         stack.to_a
       end
     end
@@ -169,7 +172,14 @@ module ChaoticJob
     end
 
     def debug(...)
-      @jobs.first.logger.debug(...)
+      logger = if @workloads.first.respond_to?(:job)
+        @workloads.first.job.logger
+      elsif defined?(Rails) && Rails.respond_to?(:logger) && Rails.logger
+        Rails.logger
+      else
+        Logger.new($stdout)
+      end
+      logger.debug(...)
     end
   end
 end

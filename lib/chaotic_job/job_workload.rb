@@ -37,6 +37,19 @@ module ChaoticJob
       [@job.class]
     end
 
+    # Race executes `job.perform` directly inside its fiber — no enqueue,
+    # no queue drain. The Tracer instruments [@job.class] and yields on
+    # every traced event, so the driver can pause/resume the fiber.
+    def call
+      @job.perform
+    end
+
+    # Class object as owner preserves existing user-built schedules
+    # (TracedEvent.new(MyJob, :call, "...")) — they don't migrate.
+    def tracer_owner
+      @job.class
+    end
+
     def clone_for_variant
       serialized = @job.serialize
       cloned = ActiveJob::Base.deserialize(serialized)
