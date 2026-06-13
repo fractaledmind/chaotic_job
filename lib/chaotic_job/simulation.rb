@@ -44,9 +44,13 @@ module ChaoticJob
 
     def define_rspec_test_for(scenario, &assertions)
       example_name = "test_simulation_scenario_before_#{scenario.glitch.event}_#{scenario.glitch.key}"
+      perform_within = @perform_only_jobs_within
+      raise_class = scenario.instance_variable_get(:@raise)
 
       @test.it example_name do
-        execute_scenario(scenario, &assertions)
+        Simulation.execute_scenario(scenario, perform_within: perform_within, raise_class: raise_class) do
+          instance_exec(scenario, &assertions)
+        end
 
         expect(scenario).to be_glitched, "Scenario did not execute glitch: #{scenario.glitch}"
       end
@@ -54,22 +58,29 @@ module ChaoticJob
 
     def define_minitest_test_for(scenario, &assertions)
       test_method_name = "test_simulation_scenario_before_#{scenario.glitch.event}_#{scenario.glitch.key}"
+      perform_within = @perform_only_jobs_within
+      raise_class = scenario.instance_variable_get(:@raise)
 
       @test.define_method(test_method_name) do
-        execute_scenario(scenario, &assertions)
+        Simulation.execute_scenario(scenario, perform_within: perform_within, raise_class: raise_class) do
+          instance_exec(scenario, &assertions)
+        end
 
         assert scenario.success?, "Scenario did not execute glitch: #{scenario.glitch}"
       end
     end
 
-    def execute_scenario(scenario, &assertions)
+    # Class method so it is reachable from inside the generated example /
+    # test method, where `self` is the example instance and Simulation's
+    # private instance methods are not in scope.
+    def self.execute_scenario(scenario, perform_within:, raise_class:, &assertions)
       # `perform_only_jobs_within` is meaningful only for workloads that
       # expose scheduled-work semantics (JobWorkload). For others it is
       # silently ignored — there is no queue to time-box.
-      if @perform_only_jobs_within && scenario.workload.respond_to?(:perform_within)
+      if perform_within && scenario.workload.respond_to?(:perform_within)
         scenario.run do
-          scenario.workload.perform_within(@perform_only_jobs_within)
-          instance_exec(scenario, &assertions)
+          scenario.workload.perform_within(perform_within)
+          assertions.call
         end
       else
         # A block workload's glitch error escapes scenario.run (Active Job
@@ -79,9 +90,9 @@ module ChaoticJob
         # workload kinds. Unrelated errors still propagate.
         begin
           scenario.run
-        rescue *Array(scenario.instance_variable_get(:@raise))
+        rescue *Array(raise_class)
         end
-        instance_exec(scenario, &assertions)
+        assertions.call
       end
     end
 
