@@ -72,7 +72,15 @@ module ChaoticJob
           instance_exec(scenario, &assertions)
         end
       else
-        scenario.run
+        # A block workload's glitch error escapes scenario.run (Active Job
+        # workloads swallow it via retry_on inside the inject!). Catching
+        # the configured raise class here keeps the simulation cycle —
+        # "run with glitch, then assert the aftermath" — uniform across
+        # workload kinds. Unrelated errors still propagate.
+        begin
+          scenario.run
+        rescue *Array(scenario.instance_variable_get(:@raise))
+        end
         instance_exec(scenario, &assertions)
       end
     end
