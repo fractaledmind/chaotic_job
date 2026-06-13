@@ -43,6 +43,9 @@ module ChaoticJob
       @glitch.executed?
     end
 
+    # Alias for parity with the RSpec matcher path (`expect(scenario).to be_glitched`).
+    alias_method :glitched?, :success?
+
     def before_line?(key)
       return false unless :line == @glitch.event
 
