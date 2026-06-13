@@ -46,7 +46,7 @@ module ChaoticJob
       example_name = "test_simulation_scenario_before_#{scenario.glitch.event}_#{scenario.glitch.key}"
 
       @test.it example_name do
-        run_scenario(scenario, &assertions)
+        execute_scenario(scenario, &assertions)
 
         expect(scenario).to be_glitched, "Scenario did not execute glitch: #{scenario.glitch}"
       end
@@ -56,13 +56,13 @@ module ChaoticJob
       test_method_name = "test_simulation_scenario_before_#{scenario.glitch.event}_#{scenario.glitch.key}"
 
       @test.define_method(test_method_name) do
-        run_scenario(scenario, &assertions)
+        execute_scenario(scenario, &assertions)
 
         assert scenario.success?, "Scenario did not execute glitch: #{scenario.glitch}"
       end
     end
 
-    def run_scenario(scenario, &assertions)
+    def execute_scenario(scenario, &assertions)
       # `perform_only_jobs_within` is meaningful only for workloads that
       # expose scheduled-work semantics (JobWorkload). For others it is
       # silently ignored — there is no queue to time-box.
