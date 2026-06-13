@@ -9,8 +9,13 @@ module ChaoticJob
 
     attr_reader :executions
 
-    def initialize(jobs, schedule:, capture: nil)
-      @jobs = jobs
+    # `racers` accepts ActiveJob instances (auto-wrapped as JobWorkloads)
+    # or Workloads directly. Each racer is keyed by its #tracer_owner in
+    # the fibers hash; schedule events route to fibers via that owner. Two
+    # racers sharing an owner overwrite each other — distinctness is the
+    # caller's contract.
+    def initialize(racers, schedule:, capture: nil)
+      @workloads = Array(racers).map { |racer| Workload.coerce(racer) }
       @schedule = schedule
       @capture = capture
       @executions = []
@@ -19,8 +24,13 @@ module ChaoticJob
       @events = []
     end
 
+    # Backwards-compat reader for users who reached into @jobs / .jobs.
+    def jobs
+      @workloads.map { |w| w.respond_to?(:job) ? w.job : w }
+    end
+
     def run
-      @jobs.each { |job| @fibers[job.class] = traced_fiber_for(job) }
+      @workloads.each { |workload| @fibers[workload.tracer_owner] = traced_fiber_for(workload) }
       fibers = @fibers
 
       ActiveSupport::Notifications.subscribed(->(*args) { @events << ActiveSupportEvent.new(*args) }, @capture) do
@@ -58,13 +68,12 @@ module ChaoticJob
       # )
       buffer = +"ChaoticJob::Race(\n"
 
-      buffer << "  jobs: [\n"
-      @jobs.each do |job|
-        job_attributes = job.serialize
-        buffer << "    #{job_attributes["job_class"]}"
-        buffer << "("
-        buffer << job_attributes["arguments"].join(", ")
-        buffer << "),\n"
+      buffer << "  racers: [\n"
+      @workloads.each do |workload|
+        line = +""
+        workload.describe(line)
+        buffer << line.strip.split("\n").map { |l| "    #{l.sub(/\A\s*\w+:\s*/, "")}" }.join("\n")
+        buffer << "\n"
       end
       buffer << "  ]\n"
 
@@ -84,15 +93,17 @@ module ChaoticJob
 
     private
 
-    def traced_fiber_for(job)
+    def traced_fiber_for(workload)
       Fiber.new do
         tracer = Tracer.new(
-          tracing: job.class,
+          tracing: workload.tracing,
+          owner: workload.tracer_owner,
           stack: @executions,
-          effect: -> { Fiber.yield EVENT }
+          effect: -> { Fiber.yield EVENT },
+          fiber_local: true
         )
         @traces << tracer
-        tracer.capture { job.perform }
+        tracer.capture { workload.call }
       end
     end
 

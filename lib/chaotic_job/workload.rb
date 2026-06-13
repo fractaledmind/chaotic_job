@@ -76,5 +76,22 @@ module ChaoticJob
     # it (it's how Simulation's `perform_only_jobs_within` time-boxes job
     # execution). Workloads that don't expose a notion of "scheduled work"
     # leave this undefined.
+
+    # Race-fiber execution: run the work synchronously, no queue or
+    # orchestration involved. Race traces this call and routes events by
+    # #tracer_owner. JobWorkload invokes job.perform directly (not the
+    # queue drain); BlockWorkload invokes the block.
+    def call
+      raise NotImplementedError
+    end
+
+    # Identity used to route Race events back to this workload's fiber.
+    # Must be stable across capture (Relay) and execution (Race) for the
+    # same workload. Strings, symbols, classes are all fine — distinctness
+    # is the only contract. Two workloads sharing an owner collide; Race
+    # will overwrite the earlier fiber with the later one.
+    def tracer_owner
+      raise NotImplementedError
+    end
   end
 end
